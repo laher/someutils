@@ -7,9 +7,9 @@ import (
 )
 
 func main() {
-	err := someutils.Call("mv", os.Args)
+	err := someutils.Cat(os.Args)
 	if err != nil {
-		fmt.Printf("Returned error: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 

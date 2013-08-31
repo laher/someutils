@@ -8,6 +8,12 @@ import (
 	"path/filepath"
 )
 
+func init() {
+	Register(Util{
+		"rm",
+		Rm})
+}
+
 type RmOptions struct {
 	recursive *bool
 }
@@ -28,10 +34,16 @@ func Rm(call []string) error {
 		flagSet.PrintDefaults()
 		return nil
 	}
-	for _, file := range flagSet.Args() {
-		e := delete(file, *options.recursive)
-		if e != nil {
-			return e
+	for _, fileGlob := range flagSet.Args() {
+		files, err := filepath.Glob(fileGlob)
+		if err != nil {
+			return err
+		}
+		for _, file := range files {
+			e := delete(file, *options.recursive)
+			if e != nil {
+				return e
+			}
 		}
 	}
 
