@@ -1,9 +1,10 @@
-// +build +unix
+// +build !windows
 
 package someutils
 
 import(
 	"syscall"
+	"unsafe"
 )
 
 func IsPipingStdin() bool {
