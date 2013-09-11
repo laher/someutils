@@ -5,9 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -70,12 +72,39 @@ func wget(links []string) error {
 	}
 	return nil
 }
+
 func wgetOne(link string) error {
+	if !strings.Contains(link, ":") {
+		link = "http://" + link
+	}
 	resp, err := http.Get(link)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
 	filename := filepath.Base(resp.Request.URL.Path)
-	if filename == "" || filename == "/" || filename == "." {
-		filename = "index.htm"
+	//invalid filenames ...
+	if filename == "" || filename == "/" ||filename == "\\" || filename == "." {
+		filename = "index"
+	}
+	if !strings.Contains(filename, ".") {
+		ct := resp.Header.Get("Content-Type")
+		//println(ct)
+		ext := "htm"
+		mediatype, _, err := mime.ParseMediaType(ct)
+		if err != nil {
+			fmt.Printf("mime error: %v\n", err)
+		} else {
+			fmt.Printf("mime type: %v (from Content-Type %v)\n", mediatype, ct)
+			slash := strings.Index(mediatype, "/")
+			if slash != -1 {
+				_, sub := mediatype[:slash], mediatype[slash+1:]
+				if sub != "" {
+					ext = sub
+				}
+			}
+		}
+		filename = filename + "." + ext
 	}
 	fmt.Printf("filename: %v\n", filename)
 	out, err := os.Create(filename)
@@ -85,7 +114,7 @@ func wgetOne(link string) error {
 	defer out.Close()
 
 	n, err := io.Copy(out, resp.Body)
-	fmt.Printf("%v b written to %v\n",n, filename)
+	fmt.Printf("%v bytes written to %v\n",n, filename)
 	if err != nil {
 		return err
 	}
