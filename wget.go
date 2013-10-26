@@ -22,12 +22,20 @@ func init() {
 }
 
 type WgetOptions struct {
+	IsContinue *bool
+	Filename *string
 }
+
+const (
+	FILEMODE os.FileMode = 0660
+)
 
 func Wget(call []string) error {
 
-	//options := WgetOptions{}
+	options := WgetOptions{}
 	flagSet := flag.NewFlagSet("wget", flag.ContinueOnError)
+	options.IsContinue = flagSet.Bool("c", false, "continue")
+	options.Filename = flagSet.String("o", "", "output filename")
 	helpFlag := flagSet.Bool("help", false, "Show this help")
 
 	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
@@ -35,7 +43,7 @@ func Wget(call []string) error {
 		return err
 	}
 	if *helpFlag {
-		println("`grep` [options] PATTERN [files...]")
+		println("wget [options] URL")
 		flagSet.PrintDefaults()
 		return nil
 	}
@@ -46,11 +54,11 @@ func Wget(call []string) error {
 	}
 	if len(args) > 0 {
 		links := args
-		return wget(links)
+		return wget(links, options)
 	} else {
 		if IsPipingStdin() {
 			//check STDIN
-			return wget([]string{})
+			return wget([]string{}, options)
 		} else {
 			//NOT piping.
 			return errors.New("Not enough args")
@@ -58,9 +66,9 @@ func Wget(call []string) error {
 	}
 }
 
-func wget(links []string) error {
+func wget(links []string, options WgetOptions) error {
 	for _, link := range links {
-		err := wgetOne(link)
+		err := wgetOne(link, options)
 		if err != nil {
 			return err
 		}
@@ -68,15 +76,66 @@ func wget(links []string) error {
 	return nil
 }
 
-func wgetOne(link string) error {
+func tidyFilename(filename string) string {
+	//invalid filenames ...
+	if filename == "" || filename == "/" ||filename == "\\" || filename == "." {
+		filename = "index"
+	}
+	return filename
+}
+
+func wgetOne(link string, options WgetOptions) error {
 	if !strings.Contains(link, ":") {
 		link = "http://" + link
 	}
 	startTime := time.Now()
-	resp, err := http.Get(link)
+	request, err := http.NewRequest("GET", link, nil)
+	//resp, err := http.Get(link)
 	if err != nil {
 		return err
 	}
+
+	filename := ""
+	if *options.Filename != "" {
+		filename = *options.Filename
+	}
+	client := &http.Client{}
+	//continue from where we left off ...
+	if *options.IsContinue {
+		if filename == "" {
+			filename = filepath.Base(request.URL.Path)
+			filename = tidyFilename(filename)
+			if !strings.Contains(filename, ".") {
+				filename = filename + ".html"
+			}
+		}
+		fi, err := os.Stat(filename)
+		if err != nil {
+			return err
+		}
+		from := fi.Size()
+		headRequest, err := http.NewRequest("HEAD", link, nil)
+		if err != nil {
+			return err
+		}
+		headResp, err := client.Do(headRequest)
+		if err != nil {
+			return err
+		}
+		cl := headResp.Header.Get("Content-Length")
+		if cl != "" {
+		rangeHeader := fmt.Sprintf("bytes %d-%s", from, cl)
+		fmt.Printf("Adding range header: %s\n", rangeHeader)
+		request.Header.Add("Range", rangeHeader)
+		} else {
+			fmt.Println("Could not find file length using HEAD request")
+		}
+	}
+	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
 	fmt.Printf("Http response: %s\n", resp.Status)
 	
 	lenS := resp.Header.Get("Content-Length")
@@ -91,10 +150,11 @@ func wgetOne(link string) error {
 	fmt.Printf("Length: %v [%s]\n", len, typ)
 	
 	defer resp.Body.Close()
-	
-	filename, err := getFilename(resp)
-	if err != nil {
-		return err
+	if filename == "" {	
+		filename, err = getFilename(resp)
+		if err != nil {
+			return err
+		}
 	}
 	fmt.Printf("Saving to: '%v'\n\n", filename)
 	out, err := os.Create(filename)
@@ -176,10 +236,8 @@ func progress(perc int64) string {
 
 func getFilename(resp *http.Response) (string, error) {
 	filename := filepath.Base(resp.Request.URL.Path)
-	//invalid filenames ...
-	if filename == "" || filename == "/" ||filename == "\\" || filename == "." {
-		filename = "index"
-	}
+	filename = tidyFilename(filename)
+
 	if !strings.Contains(filename, ".") {
 		ct := resp.Header.Get("Content-Type")
 		//println(ct)
@@ -221,6 +279,6 @@ func getFilename(resp *http.Response) (string, error) {
 			}
 			num += 1
 		}
+		return filename, errors.New("Stopping after trying 100 filename variants")
 	}
-	return filename, errors.New("Stopping after trying 100 filenames")
 }
