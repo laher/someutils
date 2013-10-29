@@ -25,9 +25,11 @@ So far, limited versions of the following commands are available:
  mv      |                   | n/a            | check symlink behaviour
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | check symlink behaviour
+ scp     |                   | ?              | -r (recursive). NOTE: currently a really early version. Just about works.
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | 
  which   | -a                | n/a            | 
+ wget    | -c                | n/a            | multi-threading? (not part of real wget)
  zip     |                   | TODO           |  
  
 You can also use 'some [cmd] [args...]' for any of the above.
