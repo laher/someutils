@@ -20,8 +20,8 @@ So far, limited versions of the following commands are available:
  --------|-------------------|----------------|------------------------
  cat     | -Ens              | Yes            | 
  cp      | -r                | n/a            | check symlink behaviour
- ls      | -lahr -1          | Yes            | -p -t
  grep    | -nvHi -E -P       | Yes            | TODO: binary files support. !!No support for BRE - uses -E by default.
+ ls      | -lahr -1          | Yes            | -p -t
  mv      |                   | n/a            | check symlink behaviour
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | check symlink behaviour
@@ -29,7 +29,7 @@ So far, limited versions of the following commands are available:
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | 
  which   | -a                | n/a            | 
- wget    | -c                | n/a            | multi-threading? (not part of real wget)
+ wget    | -c -o             | n/a            | multi-threading? (not part of real wget)
  zip     |                   | TODO           |  
  
 You can also use 'some [cmd] [args...]' for any of the above.
@@ -41,16 +41,15 @@ You can also use 'some [cmd] [args...]' for any of the above.
  * chmod/chown (relevant?)
  * diff (too big? Maybe a minimal version would be good here)
  * more (how easy is it?)
- * du/dh
+ * du/dh (need OS-specifics?)
  * find/locate
- * ln (would it need some non-Go stuff for Windows?)
+ * ln (would it need some non-Go stuff for Windows? YES at this stage)
  * ps,kill,pgrep,pkill
  * id,w,which
  * tailf (tail -f). How easy would this be?
- * scp
  * ssh (terminal handling might be too challenging)
 
-### TooBig
+### TooBig?
  * less
  * a text editor
  * top
