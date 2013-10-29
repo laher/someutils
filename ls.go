@@ -5,6 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/laher/uggo"
 	"io/ioutil"
 	"math"
 	"os"
@@ -42,10 +43,10 @@ func Ls(call []string) error {
 	helpFlag := flagSet.Bool("help", false, "Show this help")
 	out := tabwriter.NewWriter(os.Stdout, 4, 4, 1, ' ', 0)
 
-	e := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
-	if e != nil {
+	err := flagSet.Parse(uggo.Gnuify(call[1:]))
+	if err != nil {
 		println("Error parsing flags")
-		return e
+		return err
 	}
 
 	if *helpFlag {
@@ -54,9 +55,9 @@ func Ls(call []string) error {
 		return nil
 	}
 
-	args, e := getDirList(flagSet.Args(), options)
-	if e != nil {
-		return e
+	args, err := getDirList(flagSet.Args(), options)
+	if err != nil {
+		return err
 	}
 	
 	counter := 0
@@ -117,7 +118,7 @@ func Ls(call []string) error {
 
 func getDirList(globs []string, options LsOptions) ([]string, error) {
 	if len(globs) <= 0 {
-		if IsPipingStdin() {
+		if uggo.IsPipingStdin() {
 			//check STDIN
 			bio := bufio.NewReader(os.Stdin)
 			//defer bio.Close()
@@ -139,8 +140,8 @@ func getDirList(globs []string, options LsOptions) ([]string, error) {
 			}
 		} else {
 			//NOT piping. Just use cwd by default.
-			cwd, e := os.Getwd()
-			return []string{cwd}, e
+			cwd, err := os.Getwd()
+			return []string{cwd}, err
 		}
 	}
 	
@@ -199,9 +200,9 @@ func listItem(entry os.FileInfo, out *tabwriter.Writer, dir, prefix string, opti
 				fmt.Fprintf(out, "%s:\t", folder)
 			}
 			*counter += 1
-			e := list(out, filepath.Join(dir, entry.Name()), folder, options, counter)
-			if e != nil {
-				return e
+			err := list(out, filepath.Join(dir, entry.Name()), folder, options, counter)
+			if err != nil {
+				return err
 			}
 		}
 	}

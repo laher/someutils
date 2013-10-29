@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	wgetgo "github.com/laher/wget-go"
 	"os"
 )
 
 func main() {
-	err := someutils.Wget(os.Args)
+	err := wgetgo.Wget(os.Args)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)

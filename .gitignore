@@ -20,3 +20,12 @@ _cgo_export.*
 _testmain.go
 
 *.exe
+
+*.swp
+
+
+" goxc 'ignore' files
+.goxc-temp
+*.local.json
+test.json
+test

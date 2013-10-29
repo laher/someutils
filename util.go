@@ -1,7 +1,7 @@
 package someutils
 
 import (
-	"strings"
+	"github.com/laher/uggo"
 )
 
 type Util struct {
@@ -23,16 +23,5 @@ func Call(name string, args []string) error {
 
 //except '-help'	
 func splitSingleHyphenOpts(call []string) []string {
-	splut := []string{}
-	for _, item := range call {
-		if strings.HasPrefix(item, "-") && !strings.HasPrefix(item, "--") &&
-			item != "-help" {
-			for _, letter := range item[1:] {
-				splut = append(splut, "-"+string(letter))
-			}
-		} else {
-			splut = append(splut, item)
-		}
-	}
-	return splut
+	return uggo.Gnuify(call)
 }

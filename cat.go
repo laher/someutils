@@ -2,6 +2,7 @@ package someutils
 
 import (
 	"flag"
+	"github.com/laher/uggo"
 	"io"
 	"os"
 )
@@ -27,7 +28,7 @@ func Cat(call []string) error {
 	options.squeezeBlank = flagSet.Bool("s", false, "squeeze repeated empty output lines")
 	helpFlag := flagSet.Bool("help", false, "Show this help")
 
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	err := flagSet.Parse(uggo.Gnuify(call[1:]))
 	if err != nil {
 		return err
 	}

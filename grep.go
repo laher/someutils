@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/laher/uggo"
 	"io"
 	"path/filepath"
 	"regexp"
@@ -80,7 +81,7 @@ func Grep(call []string) error {
 		}
 		return grep(reg, files, options)
 	} else {
-		if IsPipingStdin() {
+		if uggo.IsPipingStdin() {
 			//check STDIN
 			return grepReader(os.Stdin, "", reg, options)
 			
