@@ -16,21 +16,21 @@ Some commands are ubiquitous anyway (such as echo,cd,whoami), some are just too 
 
 So far, limited versions of the following commands are available:
  
- Command | Options supported | STDIN support  | TODO (or !!WONTDO)
+ Command | Options supported | STDIN support  | Notes
  --------|-------------------|----------------|------------------------
  cat     | -Ens              | Yes            | 
- cp      | -r                | n/a            | check symlink behaviour
+ cp      | -r                | n/a            | TODO: check symlink behaviour
  grep    | -nvHi -E -P       | Yes            | TODO: binary files support. !!No support for BRE - uses -E by default.
- ls      | -lahr -1          | Yes            | -p -t
- mv      |                   | n/a            | check symlink behaviour
+ ls      | -lahr -1          | Yes            | TODO: -p -t
+ mv      |                   | n/a            | TODO: check symlink behaviour
  pwd     |                   | n/a            | 
- rm      | -r                | n/a            | check symlink behaviour
- scp     |                   | ?              | -r (recursive). NOTE: currently a really early version. Just about works.
+ rm      | -r                | n/a            | TODO: check symlink behaviour
+ [scp](https://github.com/laher/scp-go)     |                   | ?              | TODO: -r (recursive). MAYBE: support acting as 'remote' scp (-t and -f)
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | 
- which   | -a                | n/a            | 
- wget    | -c -o             | n/a            | multi-threading? (not part of real wget)
- zip     |                   | TODO           |  
+ which   | -a                | n/a            | TODO: Windows treats current dir above PATH variables.
+ [wget](https://github.com/laher/wget-go)    | -c -o             | n/a            | TODO: multi-threading? (not part of real wget)
+ zip     |                   | TODO           | No password support. 
  
 You can also use 'some [cmd] [args...]' for any of the above.
 

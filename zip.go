@@ -52,7 +52,7 @@ func ZipItems(zipFilename string, itemsToArchive []string) error {
 	var zf *os.File
 	if err != nil {
 		if os.IsNotExist(err) {
-			zf, err = os.Open(zipFilename)
+			zf, err = os.Create(zipFilename)
 			if err != nil {
 				return err
 			}
