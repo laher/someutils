@@ -1,11 +1,23 @@
 package someutils
 
 import (
-	"flag"
+	"bufio"
+	"fmt"
 	"github.com/laher/uggo"
 	"io"
 	"os"
+	"strings"
 )
+
+const (
+	CAT_VERSION = "0.2.0"
+)
+
+type CatOptions struct {
+	showEnds     bool
+	numbers      bool
+	squeezeBlank bool
+}
 
 func init() {
 	Register(Util{
@@ -13,38 +25,65 @@ func init() {
 		Cat})
 }
 
-type CatOptions struct {
-	showEnds *bool
-	numbers *bool
-	squeezeBlank *bool
+func (o CatOptions) isStraightCopy() bool {
+	return !o.showEnds && !o.numbers && !o.squeezeBlank
 }
 
 func Cat(call []string) error {
-
 	options := CatOptions{}
-	flagSet := flag.NewFlagSet("cat", flag.ContinueOnError)
-	options.showEnds = flagSet.Bool("E", false, "display $ at end of each line")
-	options.numbers = flagSet.Bool("n", false, "number all output lines")
-	options.squeezeBlank = flagSet.Bool("s", false, "squeeze repeated empty output lines")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("cat", "[options] [files...]", CAT_VERSION)
+	flagSet.AliasedBoolVar(&options.showEnds, []string{"E", "show-ends"}, false, "display $ at end of each line")
+	flagSet.AliasedBoolVar(&options.numbers, []string{"n", "number"}, false, "number all output lines")
+	flagSet.AliasedBoolVar(&options.squeezeBlank, []string{"s", "squeeze-blank"}, false, "squeeze repeated empty output lines")
+	var helpFlag bool
+	flagSet.AliasedBoolVar(&helpFlag, []string{"help"}, false, "Show this help")
 
-	err := flagSet.Parse(uggo.Gnuify(call[1:]))
+	err := flagSet.Parse(call[1:])
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Flag error:  %v\n\n", err.Error())
+		flagSet.Usage()
 		return err
 	}
-
-	if *helpFlag {
-		println("`cat` [options] [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	if len(flagSet.Args()) > 0 {
 		for _, fileName := range flagSet.Args() {
 			if file, err := os.Open(fileName); err == nil {
-				_, err = io.Copy(os.Stdout, file)
-				if err != nil {
-					return err
+				//if straightCopy
+				if options.isStraightCopy() {
+					_, err = io.Copy(os.Stdout, file)
+					if err != nil {
+						return err
+					}
+				} else {
+					scanner := bufio.NewScanner(file)
+					line := 1
+					var prefix string
+					var suffix string
+					for scanner.Scan() {
+						text := scanner.Text()
+						if !options.squeezeBlank || len(strings.TrimSpace(text)) > 0 {
+							if options.numbers {
+								prefix = fmt.Sprintf("%d ", line)
+							} else {
+								prefix = ""
+							}
+							if options.showEnds {
+								suffix = "$"
+							} else {
+								suffix = ""
+							}
+							fmt.Fprintf(os.Stdout, "%s%s%s\n", prefix, text, suffix)
+
+						}
+						line++
+					}
+					err := scanner.Err()
+					if err != nil {
+						return err
+					}
 				}
 			} else {
 				return err

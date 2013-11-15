@@ -3,7 +3,6 @@ package someutils
 import (
 	"bufio"
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/laher/uggo"
 	"io/ioutil"
@@ -14,13 +13,17 @@ import (
 	"text/tabwriter"
 )
 
+const (
+	LS_VERSION = "0.2.0"
+)
+
 type LsOptions struct {
-	LongList   *bool
-	Recursive  *bool
-	Human      *bool
-	AllFiles   *bool
-	OnePerLine *bool
-	Stdin	   *bool
+	LongList   bool
+	Recursive  bool
+	Human      bool
+	AllFiles   bool
+	OnePerLine bool
+	Stdin      bool
 }
 
 var accessSymbols = "xwr"
@@ -33,25 +36,21 @@ func init() {
 
 func Ls(call []string) error {
 	options := LsOptions{}
-	flagSet := flag.NewFlagSet("ls", flag.ContinueOnError)
-	options.LongList = flagSet.Bool("l", false, "Long, detailed listing")
-	options.Recursive = flagSet.Bool("r", false, "Recurse into directories")
-	options.Human = flagSet.Bool("h", false, "Output sizes in a human readable format")
-	options.AllFiles = flagSet.Bool("a", false, "Show all files (including dotfiles)")
-	options.OnePerLine = flagSet.Bool("1", false, "One entry per line")
-	options.Stdin = flagSet.Bool("z", false, "Read from stdin")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
-	out := tabwriter.NewWriter(os.Stdout, 4, 4, 1, ' ', 0)
+	flagSet := uggo.NewFlagSetDefault("ls", "[options] [dirs...]", LS_VERSION)
+	flagSet.BoolVar(&options.LongList, "l", false, "Long, detailed listing")
+	flagSet.AliasedBoolVar(&options.Recursive, []string{"R", "recursive"}, false, "Recurse into directories")
+	flagSet.AliasedBoolVar(&options.Human, []string{"h", "human-readable"}, false, "Output sizes in a human readable format")
+	flagSet.AliasedBoolVar(&options.AllFiles, []string{"a", "all"}, false, "Show all files (including dotfiles)")
+	flagSet.BoolVar(&options.OnePerLine, "1", false, "One entry per line")
+	flagSet.AliasedBoolVar(&options.Stdin, []string{"z", "stdin"}, false, "Read from stdin")
 
-	err := flagSet.Parse(uggo.Gnuify(call[1:]))
+	out := tabwriter.NewWriter(os.Stdout, 4, 4, 1, ' ', 0)
+	err := flagSet.Parse(call[1:])
 	if err != nil {
 		println("Error parsing flags")
 		return err
 	}
-
-	if *helpFlag {
-		println("`ls` [options] [dirs...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 
@@ -59,15 +58,15 @@ func Ls(call []string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	counter := 0
 	lastWasDir := false
 	for i, arg := range args {
-		if !strings.HasPrefix(arg, ".") || *options.AllFiles ||
+		if !strings.HasPrefix(arg, ".") || options.AllFiles ||
 			strings.HasPrefix(arg, "..") || "." == arg {
 			argInfo, err := os.Stat(arg)
 			if err != nil {
-				fmt.Println("stat failed for ",arg)
+				fmt.Fprintln(os.Stderr, "stat failed for ", arg)
 				return err
 			}
 			if argInfo.IsDir() {
@@ -81,9 +80,9 @@ func Ls(call []string) error {
 					fmt.Fprintf(out, "%s:\n", arg)
 				}
 				dir := arg
-				
+
 				//show . and ..
-				if *options.AllFiles {
+				if options.AllFiles {
 					df, err := os.Stat(filepath.Dir(dir))
 					if err != nil {
 						fmt.Fprintf(out, "Error opening parent dir: %v", err)
@@ -97,7 +96,7 @@ func Ls(call []string) error {
 						printEntry(".", df, out, options, &counter)
 					}
 				}
-				
+
 				err := list(out, dir, "", options, &counter)
 				if err != nil {
 					return err
@@ -106,7 +105,7 @@ func Ls(call []string) error {
 					fmt.Fprintf(out, "\n")
 				}
 			} else {
-				
+
 				listItem(argInfo, out, filepath.Dir(arg), "", options, &counter)
 			}
 			lastWasDir = argInfo.IsDir()
@@ -144,15 +143,15 @@ func getDirList(globs []string, options LsOptions) ([]string, error) {
 			return []string{cwd}, err
 		}
 	}
-	
+
 	args := []string{}
 	for _, glob := range globs {
 		results, err := filepath.Glob(glob)
 		if err != nil {
 			return args, err
 		}
-		if len(results)<1 { //no match
-			return args, errors.New("ls: cannot access "+glob+": No such file or directory")
+		if len(results) < 1 { //no match
+			return args, errors.New("ls: cannot access " + glob + ": No such file or directory")
 		}
 		args = append(args, results...)
 	}
@@ -160,12 +159,12 @@ func getDirList(globs []string, options LsOptions) ([]string, error) {
 }
 
 func list(out *tabwriter.Writer, dir, prefix string, options LsOptions, counter *int) error {
-	if !strings.HasPrefix(dir, ".") || *options.AllFiles ||
+	if !strings.HasPrefix(dir, ".") || options.AllFiles ||
 		strings.HasPrefix(dir, "..") || "." == dir {
-		
+
 		entries, err := ioutil.ReadDir(dir)
 		if err != nil {
-			fmt.Printf("Error reading dir '%s'",dir)
+			fmt.Fprintf(os.Stderr, "Error reading dir '%s'", dir)
 			return err
 		}
 		//dirs first, then files
@@ -188,13 +187,13 @@ func list(out *tabwriter.Writer, dir, prefix string, options LsOptions, counter 
 	}
 	return nil
 }
-	
+
 func listItem(entry os.FileInfo, out *tabwriter.Writer, dir, prefix string, options LsOptions, counter *int) error {
-	if !strings.HasPrefix(entry.Name(), ".") || *options.AllFiles {
+	if !strings.HasPrefix(entry.Name(), ".") || options.AllFiles {
 		printEntry(entry.Name(), entry, out, options, counter)
-		if entry.IsDir() && *options.Recursive {
+		if entry.IsDir() && options.Recursive {
 			folder := filepath.Join(prefix, entry.Name())
-			if *counter%3 == 2 || *options.LongList || *options.OnePerLine {
+			if *counter%3 == 2 || options.LongList || options.OnePerLine {
 				fmt.Fprintf(out, "%s:\n", folder)
 			} else {
 				fmt.Fprintf(out, "%s:\t", folder)
@@ -210,7 +209,7 @@ func listItem(entry os.FileInfo, out *tabwriter.Writer, dir, prefix string, opti
 }
 
 func printEntry(name string, e os.FileInfo, out *tabwriter.Writer, options LsOptions, counter *int) {
-	if *options.LongList {
+	if options.LongList {
 		fmt.Fprintf(out, "%s\t", getModeString(e))
 		if !e.IsDir() {
 			fmt.Fprintf(out, "%s\t", getSizeString(e.Size(), options.Human))
@@ -222,7 +221,7 @@ func printEntry(name string, e os.FileInfo, out *tabwriter.Writer, options LsOpt
 		//fmt.Fprintf(out, "%s\t", getUserString(e.Sys.(*syscall.Stat_t).Uid))
 	}
 	fmt.Fprintf(out, "%s%s\t", name, getEntryTypeString(e))
-	if *counter%3 == 2 || *options.LongList || *options.OnePerLine {
+	if *counter%3 == 2 || options.LongList || options.OnePerLine {
 		fmt.Fprintln(out, "")
 	}
 	*counter += 1
@@ -253,8 +252,8 @@ func getModeString(e os.FileInfo) (s string) {
 
 var sizeSymbols = "BkMGT"
 
-func getSizeString(size int64, humanFlag *bool) (s string) {
-	if !*humanFlag {
+func getSizeString(size int64, humanFlag bool) (s string) {
+	if !humanFlag {
 		return fmt.Sprintf("%9dB", size)
 	}
 	var power int

@@ -1,14 +1,19 @@
 package someutils
 
 import (
-	"flag"
+	"github.com/laher/uggo"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
+)
+
+const (
+	WHICH_VERSION = "0.2.0"
 )
 
 type WhichOptions struct {
-	all   *bool
+	all bool
 }
 
 func init() {
@@ -19,32 +24,30 @@ func init() {
 
 func Which(call []string) error {
 	options := WhichOptions{}
-	flagSet := flag.NewFlagSet("which", flag.ContinueOnError)
-	options.all = flagSet.Bool("a", false, "Print all matching executables in PATH, not just the first.")
-	
-	helpFlag := flagSet.Bool("help", false, "Show this help")
-	
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	flagSet := uggo.NewFlagSetDefault("which", "[-a] args", WHICH_VERSION)
+	flagSet.BoolVar(&options.all, "a", false, "Print all matching executables in PATH, not just the first.")
+
+	err := flagSet.Parse(call[1:])
 	if err != nil {
 		println("Error parsing flags")
 		return err
 	}
-
-	if *helpFlag {
-		println("`ls` [options] [dirs...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 
 	args := flagSet.Args()
 	path := os.Getenv("PATH")
+	if runtime.GOOS == "windows" {
+		path = ".;" + path
+	}
 	pl := filepath.SplitList(path)
 	for _, arg := range args {
 		checkPathParts(arg, pl, options)
 		/*
-		if err != nil {
-			return err
-		}*/
+			if err != nil {
+				return err
+			}*/
 	}
 	return nil
 }
@@ -56,7 +59,9 @@ func checkPathParts(arg string, pathParts []string, options WhichOptions) {
 			if fi.IsDir() {
 				possibleExe := filepath.Join(pathPart, arg)
 				if runtime.GOOS == "windows" {
-					possibleExe += ".exe"
+					if !strings.HasSuffix(possibleExe, ".exe") {
+						possibleExe += ".exe"
+					}
 				}
 				_, err := os.Stat(possibleExe)
 				if err != nil {
@@ -68,7 +73,7 @@ func checkPathParts(arg string, pathParts []string, options WhichOptions) {
 					} else {
 						//skip
 					}
-					if !*options.all {
+					if !options.all {
 						return
 					}
 				}

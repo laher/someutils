@@ -3,11 +3,15 @@ package someutils
 import (
 	"archive/zip"
 	"errors"
-	"flag"
 	"fmt"
+	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
+)
+
+const (
+	ZIP_VERSION = "0.2.0"
 )
 
 type ArchiveItem struct {
@@ -24,20 +28,18 @@ func init() {
 }
 
 func Zip(call []string) error {
-	flagSet := flag.NewFlagSet("zip", flag.ContinueOnError)
-	helpFlag := flagSet.Bool("help", false, "Show this help")
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", ZIP_VERSION)
+	err := flagSet.Parse(call[1:])
 	if err != nil {
+		flagSet.Usage()
 		return err
 	}
-
-	if *helpFlag {
-		println("`zip` [options] [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 	args := flagSet.Args()
 	if len(args) < 2 {
+		flagSet.Usage()
 		return errors.New("Not enough args given")
 	}
 	err = ZipItems(args[0], args[1:])

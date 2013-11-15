@@ -1,12 +1,8 @@
 package someutils
 
-import (
-	"github.com/laher/uggo"
-)
-
 type Util struct {
-	Name            string
-	Function        func([]string) error
+	Name     string
+	Function func([]string) error
 }
 
 var (
@@ -21,7 +17,10 @@ func Call(name string, args []string) error {
 	return allUtils[name].Function(args)
 }
 
-//except '-help'	
-func splitSingleHyphenOpts(call []string) []string {
-	return uggo.Gnuify(call)
+func List() []string {
+	ret := []string{}
+	for k, _ := range allUtils {
+		ret = append(ret, k)
+	}
+	return ret
 }

@@ -9,4 +9,3 @@ func init() {
 		"scp",
 		scp.Scp})
 }
-

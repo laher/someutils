@@ -1,16 +1,19 @@
 package someutils
 
 import (
+	"bufio"
 	"errors"
-	"flag"
 	"fmt"
 	"github.com/laher/uggo"
 	"io"
+	"os"
 	"path/filepath"
 	"regexp"
-	"os"
-	"bufio"
 	"strings"
+)
+
+const (
+	GREP_VERSION = "0.2.0"
 )
 
 func init() {
@@ -20,43 +23,43 @@ func init() {
 }
 
 type GrepOptions struct {
-	IsPerl *bool
-	IsExtended *bool
-	IsIgnoreCase *bool
-	IsInvertMatch *bool
-	IsPrintFilename *bool
-	IsPrintLineNumber *bool
-	IsRecurse *bool
-	IsQuiet *bool
-	LinesBefore *int
-	LinesAfter *int
-	LinesAround *int
+	IsPerl            bool
+	IsExtended        bool
+	IsIgnoreCase      bool
+	IsInvertMatch     bool
+	IsPrintFilename   bool
+	IsPrintLineNumber bool
+	IsRecurse         bool
+	IsQuiet           bool
+	LinesBefore       int
+	LinesAfter        int
+	LinesAround       int
+	IsHelp            bool
 }
 
 func Grep(call []string) error {
 
 	options := GrepOptions{}
-	flagSet := flag.NewFlagSet("grep", flag.ContinueOnError)
-	options.IsPerl = flagSet.Bool("P", false, "Perl-style regex")
-	options.IsExtended = flagSet.Bool("E", true, "Extended regex (default)")
-	options.IsIgnoreCase = flagSet.Bool("i", false, "ignore case")
-	options.IsPrintFilename = flagSet.Bool("H", true, "print the file name for each match")
-	options.IsPrintLineNumber = flagSet.Bool("n", false, "print the line number for each match")
-	options.IsInvertMatch = flagSet.Bool("v", false, "invert match")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("grep", "[options] PATTERN [files...]", GREP_VERSION)
+	flagSet.AliasedBoolVar(&options.IsPerl, []string{"P", "perl-regexp"}, false, "Perl-style regex")
+	flagSet.AliasedBoolVar(&options.IsExtended, []string{"E", "extended-regexp"}, true, "Extended regex (default)")
+	flagSet.AliasedBoolVar(&options.IsIgnoreCase, []string{"i", "ignore-case"}, false, "ignore case")
+	flagSet.AliasedBoolVar(&options.IsPrintFilename, []string{"H", "with-filename"}, true, "print the file name for each match")
+	flagSet.AliasedBoolVar(&options.IsPrintLineNumber, []string{"n", "line-number"}, false, "print the line number for each match")
+	flagSet.AliasedBoolVar(&options.IsInvertMatch, []string{"v", "invert-match"}, false, "invert match")
+	flagSet.BoolVar(&options.IsHelp, "help", false, "Show this help")
 
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	err := flagSet.Parse(call[1:])
 	if err != nil {
+		flagSet.Usage()
 		return err
 	}
-	if *helpFlag {
-		println("`grep` [options] PATTERN [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 	args := flagSet.Args()
 	if len(args) < 1 {
-		flagSet.PrintDefaults()
+		flagSet.Usage()
 		return errors.New("Not enough args")
 	}
 	pattern := args[0]
@@ -74,8 +77,8 @@ func Grep(call []string) error {
 			if err != nil {
 				return err
 			}
-			if len(results)<1 { //no match
-				return errors.New("grep: cannot access "+glob+": No such file or directory")
+			if len(results) < 1 { //no match
+				return errors.New("grep: cannot access " + glob + ": No such file or directory")
 			}
 			files = append(files, results...)
 		}
@@ -84,7 +87,6 @@ func Grep(call []string) error {
 		if uggo.IsPipingStdin() {
 			//check STDIN
 			return grepReader(os.Stdin, "", reg, options)
-			
 		} else {
 			//NOT piping.
 			return errors.New("Not enough args")
@@ -93,8 +95,7 @@ func Grep(call []string) error {
 }
 
 func grep(reg *regexp.Regexp, files []string, options GrepOptions) error {
-	
-	for _,filename := range files {
+	for _, filename := range files {
 		file, err := os.Open(filename)
 		if err != nil {
 			return err
@@ -122,32 +123,32 @@ func grepReader(file io.Reader, filename string, reg *regexp.Regexp, options Gre
 		}
 		line := scanner.Text()
 		candidate := line
-		if *options.IsIgnoreCase && !*options.IsPerl {
+		if options.IsIgnoreCase && !options.IsPerl {
 			candidate = strings.ToLower(line)
 		}
-		isMatch := reg.MatchString(candidate) 
-		if (isMatch && !*options.IsInvertMatch) || (!isMatch && *options.IsInvertMatch) {
-			if *options.IsPrintFilename && filename != "" {
+		isMatch := reg.MatchString(candidate)
+		if (isMatch && !options.IsInvertMatch) || (!isMatch && options.IsInvertMatch) {
+			if options.IsPrintFilename && filename != "" {
 				fmt.Printf("%s:", filename)
 			}
-			if *options.IsPrintLineNumber {
+			if options.IsPrintLineNumber {
 				fmt.Printf("%d:", lineNumber)
 			}
 			fmt.Println(line)
 		}
-		lineNumber+=1
+		lineNumber += 1
 	}
 	return nil
 }
 
 func compile(pattern string, options GrepOptions) (*regexp.Regexp, error) {
-	if *options.IsPerl {
-		if *options.IsIgnoreCase && !strings.HasPrefix(pattern, "(?") {
-			pattern = "(?i)"+pattern
+	if options.IsPerl {
+		if options.IsIgnoreCase && !strings.HasPrefix(pattern, "(?") {
+			pattern = "(?i)" + pattern
 		}
 		return regexp.Compile(pattern)
 	} else {
-		if *options.IsIgnoreCase {
+		if options.IsIgnoreCase {
 			pattern = strings.ToLower(pattern)
 		}
 		return regexp.CompilePOSIX(pattern)

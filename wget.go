@@ -9,4 +9,3 @@ func init() {
 		"wget",
 		wget.Wget})
 }
-

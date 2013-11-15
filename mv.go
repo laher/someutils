@@ -1,10 +1,13 @@
 package someutils
 
 import (
-	"flag"
-	//"fmt"
+	"github.com/laher/uggo"
 	"os"
 	"path/filepath"
+)
+
+const (
+	MV_VERSION = "0.2.0"
 )
 
 func init() {
@@ -14,21 +17,20 @@ func init() {
 }
 
 type MvOptions struct {
-	recursive *bool
+	IsHelp bool
 }
 
 func mv(call []string) error {
 	options := MvOptions{}
-	flagSet := flag.NewFlagSet("ls", flag.ContinueOnError)
-	options.recursive = flagSet.Bool("r", false, "Recurse into directories")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", MV_VERSION)
+	flagSet.BoolVar(&options.IsHelp, "help", false, "Show this help")
 
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	err := flagSet.Parse(call[1:])
 	if err != nil {
 		return err
 	}
 
-	if *helpFlag {
+	if options.IsHelp {
 		println("`mv` [options] [src] [dest]")
 		flagSet.PrintDefaults()
 		return nil
@@ -41,9 +43,9 @@ func mv(call []string) error {
 		flagSet.PrintDefaults()
 		return nil
 	}
-	
-	srcGlobs := args[0:len(args)-1]
-	dest:= args[len(args)-1]
+
+	srcGlobs := args[0 : len(args)-1]
+	dest := args[len(args)-1]
 	//fmt.Printf("globs %v\n", srcGlobs)
 	for _, srcGlob := range srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
@@ -61,7 +63,7 @@ func mv(call []string) error {
 	return nil
 }
 
-func moveFile(src, dest string, options MvOptions) error {	
+func moveFile(src, dest string, options MvOptions) error {
 
 	srcFile, err := os.Open(src)
 	if err != nil {

@@ -2,11 +2,20 @@ package someutils
 
 import (
 	"errors"
-	"flag"
+	"fmt"
+	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
 )
+
+const (
+	CP_VERSION = "0.2.0"
+)
+
+type CpOptions struct {
+	Recursive bool
+}
 
 func init() {
 	Register(Util{
@@ -14,37 +23,30 @@ func init() {
 		Cp})
 }
 
-type CpOptions struct {
-	Recursive *bool
-}
-
 func Cp(call []string) error {
 	options := CpOptions{}
-	flagSet := flag.NewFlagSet("ls", flag.ContinueOnError)
-	options.Recursive = flagSet.Bool("r", false, "Recurse into directories")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", CP_VERSION)
+	flagSet.AliasedBoolVar(&options.Recursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
 
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	err := flagSet.Parse(call[1:])
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Flag error:  %v\n\n", err.Error())
+		flagSet.Usage()
 		return err
 	}
-
-	if *helpFlag {
-		println("`cp` [options] [src] [dest]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 
 	args := flagSet.Args()
 
 	if len(args) < 2 {
-		println("`cp` [options] [src...] [dest]")
-		flagSet.PrintDefaults()
-		return nil
+		flagSet.Usage()
+		return errors.New("Not enough args")
 	}
-	
-	srcGlobs := args[0:len(args)-1]
-	dest:= args[len(args)-1]
+
+	srcGlobs := args[0 : len(args)-1]
+	dest := args[len(args)-1]
 	//fmt.Printf("globs %v\n", srcGlobs)
 	for _, srcGlob := range srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
@@ -73,10 +75,10 @@ func copyFile(src, dest string, options CpOptions) error {
 	if err != nil {
 		return err
 	}
-	if sinf.IsDir() && !*options.Recursive {
-		return errors.New("Omitting directory "+src)
+	if sinf.IsDir() && !options.Recursive {
+		return errors.New("Omitting directory " + src)
 	}
-	
+
 	//check if destination given is full filename or its (existing) parent dir
 	var destFull string
 	dinf, err := os.Stat(dest)
@@ -112,7 +114,7 @@ func copyFile(src, dest string, options CpOptions) error {
 			return errors.New("destination is an existing non-directory")
 		}
 	}
-	
+
 	if sinf.IsDir() {
 		//println("copying dir")
 		if !destExists {

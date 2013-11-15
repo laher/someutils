@@ -1,11 +1,11 @@
-
 //+build windows
 
 package someutils
 
-import(
+import (
 	"os"
 )
+
 //TODO use exec and 'mklink.exe'
 func makeLink(target, linkName string, options LnOptions) error {
 	if *options.IsSymbolic {

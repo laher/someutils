@@ -2,9 +2,13 @@ package someutils
 
 import (
 	"errors"
-	"flag"
+	"github.com/laher/uggo"
 	"os"
 	"time"
+)
+
+const (
+	TOUCH_VERSION = "0.2.0"
 )
 
 func init() {
@@ -14,18 +18,17 @@ func init() {
 }
 
 func Touch(call []string) error {
-	flagSet := flag.NewFlagSet("unzip", flag.ContinueOnError)
-	helpFlag := flagSet.Bool("help", false, "Show this help")
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	flagSet := uggo.NewFlagSetDefault("touch", "[options] [files...]", TOUCH_VERSION)
+	helpFlag := false
+	flagSet.BoolVar(&helpFlag, "help", false, "Show this help")
+	err := flagSet.Parse(call[1:])
 	if err != nil {
 		return err
 	}
-
-	if *helpFlag {
-		println("`zip` [options] [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
+
 	args := flagSet.Args()
 	if len(args) < 1 {
 		return errors.New("Not enough args given")
@@ -40,20 +43,20 @@ func Touch(call []string) error {
 }
 
 func touch(filename string) error {
-		_, err := os.Stat(filename)
-		if err != nil {
-			if os.IsNotExist(err) {
-				file, err := os.Create(filename)
-				if err != nil {
-					return err
-				}
-				return file.Close()
-			} else {
+	_, err := os.Stat(filename)
+	if err != nil {
+		if os.IsNotExist(err) {
+			file, err := os.Create(filename)
+			if err != nil {
 				return err
 			}
+			return file.Close()
 		} else {
-			//set access times
-			os.Chtimes(filename, time.Now(), time.Now())
+			return err
 		}
+	} else {
+		//set access times
+		os.Chtimes(filename, time.Now(), time.Now())
+	}
 	return nil
 }

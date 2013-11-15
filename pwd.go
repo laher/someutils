@@ -1,8 +1,12 @@
 package someutils
 
 import (
-	"flag"
+	"github.com/laher/uggo"
 	"os"
+)
+
+const (
+	PWD_VERSION = "0.2.0"
 )
 
 func init() {
@@ -13,20 +17,15 @@ func init() {
 
 func Pwd(call []string) error {
 
-	flagSet := flag.NewFlagSet("pwd", flag.ContinueOnError)
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("pwd", "", PWD_VERSION)
 
-	err := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	err := flagSet.Parse(call[1:])
 	if err != nil {
 		return err
 	}
-
-	if *helpFlag {
-		println("`pwd` [options] [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
 	wd, err := os.Getwd()
 	if err != nil {
 		return err

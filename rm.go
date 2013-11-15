@@ -1,11 +1,15 @@
 package someutils
 
 import (
-	"flag"
 	"fmt"
+	"github.com/laher/uggo"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+)
+
+const (
+	RM_VERSION = "0.2.0"
 )
 
 func init() {
@@ -15,23 +19,19 @@ func init() {
 }
 
 type RmOptions struct {
-	recursive *bool
+	IsRecursive bool
 }
 
 func Rm(call []string) error {
 	options := RmOptions{}
-	flagSet := flag.NewFlagSet("ls", flag.ContinueOnError)
-	options.recursive = flagSet.Bool("r", false, "Recurse into directories")
-	helpFlag := flagSet.Bool("help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("rm", "[options] [files...]", RM_VERSION)
+	flagSet.BoolVar(&options.IsRecursive, "r", false, "Recurse into directories")
 
-	e := flagSet.Parse(splitSingleHyphenOpts(call[1:]))
+	e := flagSet.Parse(call[1:])
 	if e != nil {
 		return e
 	}
-
-	if *helpFlag {
-		println("`rm` [options] [files...]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 	for _, fileGlob := range flagSet.Args() {
@@ -40,7 +40,7 @@ func Rm(call []string) error {
 			return err
 		}
 		for _, file := range files {
-			e := delete(file, *options.recursive)
+			e := delete(file, options.IsRecursive)
 			if e != nil {
 				return e
 			}
