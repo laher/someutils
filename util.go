@@ -1,5 +1,9 @@
 package someutils
 
+const (
+	VERSION = "0.3.0"
+)
+
 type Util struct {
 	Name     string
 	Function func([]string) error

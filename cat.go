@@ -9,9 +9,6 @@ import (
 	"strings"
 )
 
-const (
-	CAT_VERSION = "0.2.0"
-)
 
 type CatOptions struct {
 	showEnds     bool
@@ -31,12 +28,10 @@ func (o CatOptions) isStraightCopy() bool {
 
 func Cat(call []string) error {
 	options := CatOptions{}
-	flagSet := uggo.NewFlagSetDefault("cat", "[options] [files...]", CAT_VERSION)
+	flagSet := uggo.NewFlagSetDefault("cat", "[options] [files...]", VERSION)
 	flagSet.AliasedBoolVar(&options.showEnds, []string{"E", "show-ends"}, false, "display $ at end of each line")
 	flagSet.AliasedBoolVar(&options.numbers, []string{"n", "number"}, false, "number all output lines")
 	flagSet.AliasedBoolVar(&options.squeezeBlank, []string{"s", "squeeze-blank"}, false, "squeeze repeated empty output lines")
-	var helpFlag bool
-	flagSet.AliasedBoolVar(&helpFlag, []string{"help"}, false, "Show this help")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
