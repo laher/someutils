@@ -5,10 +5,6 @@ import (
 	"os"
 )
 
-const (
-	PWD_VERSION = "0.2.0"
-)
-
 func init() {
 	Register(Util{
 		"pwd",
@@ -17,7 +13,7 @@ func init() {
 
 func Pwd(call []string) error {
 
-	flagSet := uggo.NewFlagSetDefault("pwd", "", PWD_VERSION)
+	flagSet := uggo.NewFlagSetDefault("pwd", "", VERSION)
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {

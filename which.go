@@ -8,10 +8,6 @@ import (
 	"strings"
 )
 
-const (
-	WHICH_VERSION = "0.2.0"
-)
-
 type WhichOptions struct {
 	all bool
 }
@@ -24,7 +20,7 @@ func init() {
 
 func Which(call []string) error {
 	options := WhichOptions{}
-	flagSet := uggo.NewFlagSetDefault("which", "[-a] args", WHICH_VERSION)
+	flagSet := uggo.NewFlagSetDefault("which", "[-a] args", VERSION)
 	flagSet.BoolVar(&options.all, "a", false, "Print all matching executables in PATH, not just the first.")
 
 	err := flagSet.Parse(call[1:])

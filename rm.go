@@ -8,10 +8,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	RM_VERSION = "0.2.0"
-)
-
 func init() {
 	Register(Util{
 		"rm",
@@ -24,7 +20,7 @@ type RmOptions struct {
 
 func Rm(call []string) error {
 	options := RmOptions{}
-	flagSet := uggo.NewFlagSetDefault("rm", "[options] [files...]", RM_VERSION)
+	flagSet := uggo.NewFlagSetDefault("rm", "[options] [files...]", VERSION)
 	flagSet.BoolVar(&options.IsRecursive, "r", false, "Recurse into directories")
 
 	e := flagSet.Parse(call[1:])

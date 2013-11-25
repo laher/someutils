@@ -5,10 +5,6 @@ import (
 	"github.com/laher/uggo"
 )
 
-const (
-	LN_VERSION = "0.2.0"
-)
-
 type LnOptions struct {
 	IsForce    bool
 	IsSymbolic bool
@@ -22,7 +18,7 @@ func init() {
 
 func Ln(call []string) error {
 	options := LnOptions{}
-	flagSet := uggo.NewFlagSetDefault("ln", "[options] TARGET LINK_NAME", LN_VERSION)
+	flagSet := uggo.NewFlagSetDefault("ln", "[options] TARGET LINK_NAME", VERSION)
 	flagSet.BoolVar(&options.IsSymbolic, "s", false, "Symbolic")
 	flagSet.BoolVar(&options.IsForce, "f", false, "Force")
 

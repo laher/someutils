@@ -13,10 +13,6 @@ import (
 	"text/tabwriter"
 )
 
-const (
-	LS_VERSION = "0.2.0"
-)
-
 type LsOptions struct {
 	LongList   bool
 	Recursive  bool
@@ -36,7 +32,7 @@ func init() {
 
 func Ls(call []string) error {
 	options := LsOptions{}
-	flagSet := uggo.NewFlagSetDefault("ls", "[options] [dirs...]", LS_VERSION)
+	flagSet := uggo.NewFlagSetDefault("ls", "[options] [dirs...]", VERSION)
 	flagSet.BoolVar(&options.LongList, "l", false, "Long, detailed listing")
 	flagSet.AliasedBoolVar(&options.Recursive, []string{"R", "recursive"}, false, "Recurse into directories")
 	flagSet.AliasedBoolVar(&options.Human, []string{"h", "human-readable"}, false, "Output sizes in a human readable format")

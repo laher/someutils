@@ -10,10 +10,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	ZIP_VERSION = "0.2.0"
-)
-
 type ArchiveItem struct {
 	//if FileSystemPath is empty, use Data instead
 	FileSystemPath string
@@ -28,7 +24,7 @@ func init() {
 }
 
 func Zip(call []string) error {
-	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", ZIP_VERSION)
+	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", VERSION)
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		flagSet.Usage()

@@ -10,10 +10,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	UNZIP_VERSION = "0.2.0"
-)
-
 func init() {
 	Register(Util{
 		"unzip",
@@ -22,7 +18,7 @@ func init() {
 
 func Unzip(call []string) error {
 
-	flagSet := uggo.NewFlagSetDefault("unzip", "[options] file.zip [list]", UNZIP_VERSION)
+	flagSet := uggo.NewFlagSetDefault("unzip", "[options] file.zip [list]", VERSION)
 	destDir := "."
 	flagSet.StringVar(&destDir, "d", destDir, "destination directory")
 	test := false

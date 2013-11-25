@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-const (
-	TOUCH_VERSION = "0.2.0"
-)
-
 func init() {
 	Register(Util{
 		"touch",
@@ -18,9 +14,7 @@ func init() {
 }
 
 func Touch(call []string) error {
-	flagSet := uggo.NewFlagSetDefault("touch", "[options] [files...]", TOUCH_VERSION)
-	helpFlag := false
-	flagSet.BoolVar(&helpFlag, "help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("touch", "[options] [files...]", VERSION)
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		return err

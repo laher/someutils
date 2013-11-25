@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-
 type CatOptions struct {
 	showEnds     bool
 	numbers      bool

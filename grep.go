@@ -12,10 +12,6 @@ import (
 	"strings"
 )
 
-const (
-	GREP_VERSION = "0.2.0"
-)
-
 func init() {
 	Register(Util{
 		"grep",
@@ -34,20 +30,18 @@ type GrepOptions struct {
 	LinesBefore       int
 	LinesAfter        int
 	LinesAround       int
-	IsHelp            bool
 }
 
 func Grep(call []string) error {
 
 	options := GrepOptions{}
-	flagSet := uggo.NewFlagSetDefault("grep", "[options] PATTERN [files...]", GREP_VERSION)
+	flagSet := uggo.NewFlagSetDefault("grep", "[options] PATTERN [files...]", VERSION)
 	flagSet.AliasedBoolVar(&options.IsPerl, []string{"P", "perl-regexp"}, false, "Perl-style regex")
 	flagSet.AliasedBoolVar(&options.IsExtended, []string{"E", "extended-regexp"}, true, "Extended regex (default)")
 	flagSet.AliasedBoolVar(&options.IsIgnoreCase, []string{"i", "ignore-case"}, false, "ignore case")
 	flagSet.AliasedBoolVar(&options.IsPrintFilename, []string{"H", "with-filename"}, true, "print the file name for each match")
 	flagSet.AliasedBoolVar(&options.IsPrintLineNumber, []string{"n", "line-number"}, false, "print the line number for each match")
 	flagSet.AliasedBoolVar(&options.IsInvertMatch, []string{"v", "invert-match"}, false, "invert match")
-	flagSet.BoolVar(&options.IsHelp, "help", false, "Show this help")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {

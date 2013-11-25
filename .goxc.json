@@ -1,10 +1,8 @@
 {
 	"ArtifactsDest": "",
 	"BuildConstraints": "windows",
-	"Resources": {
-		"Include": "test/*"
-	},
-	"PackageVersion": "0.1.2",
+	"ResourcesInclude": "test/*",
+	"PackageVersion": "0.3.0",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
@@ -13,5 +11,5 @@
 			"subject": "laher"
 		}
 	},
-	"FormatVersion": "0.8"
+	"ConfigVersion": "0.9"
 }

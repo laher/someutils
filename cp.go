@@ -9,10 +9,6 @@ import (
 	"path/filepath"
 )
 
-const (
-	CP_VERSION = "0.2.0"
-)
-
 type CpOptions struct {
 	Recursive bool
 }
@@ -25,7 +21,7 @@ func init() {
 
 func Cp(call []string) error {
 	options := CpOptions{}
-	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", CP_VERSION)
+	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", VERSION)
 	flagSet.AliasedBoolVar(&options.Recursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
 
 	err := flagSet.Parse(call[1:])

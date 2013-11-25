@@ -1,13 +1,11 @@
 package someutils
 
 import (
+	"errors"
+	"fmt"
 	"github.com/laher/uggo"
 	"os"
 	"path/filepath"
-)
-
-const (
-	MV_VERSION = "0.2.0"
 )
 
 func init() {
@@ -16,26 +14,18 @@ func init() {
 		mv})
 }
 
-type MvOptions struct {
-	IsHelp bool
-}
-
 func mv(call []string) error {
-	options := MvOptions{}
-	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", MV_VERSION)
-	flagSet.BoolVar(&options.IsHelp, "help", false, "Show this help")
+	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", VERSION)
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "Flag error:  %v\n\n", err.Error())
+		flagSet.Usage()
 		return err
 	}
-
-	if options.IsHelp {
-		println("`mv` [options] [src] [dest]")
-		flagSet.PrintDefaults()
+	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-
 	args := flagSet.Args()
 
 	if len(args) < 2 {
@@ -52,10 +42,15 @@ func mv(call []string) error {
 		if err != nil {
 			return err
 		}
+		if len(srces) < 1 {
+			return errors.New(fmt.Sprintf("Source glob '%s' does not match any files\n", srcGlob))
+		}
+
 		//fmt.Printf(" %v\n", srces)
 		for _, src := range srces {
-			err = moveFile(src, dest, options)
+			err = moveFile(src, dest)
 			if err != nil {
+				fmt.Printf("Error %v\n", err)
 				return err
 			}
 		}
@@ -63,7 +58,8 @@ func mv(call []string) error {
 	return nil
 }
 
-func moveFile(src, dest string, options MvOptions) error {
+func moveFile(src, dest string) error {
+	fmt.Printf("%s -> %s\n", src, dest)
 
 	srcFile, err := os.Open(src)
 	if err != nil {
