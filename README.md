@@ -25,7 +25,7 @@ So far, limited versions of the following commands are available:
  mv      |                   | n/a            | TODO: check symlink behaviour
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | TODO: check symlink behaviour
- [scp](https://github.com/laher/scp-go)     |                   | ?              | TODO: -r (recursive). MAYBE: support acting as 'remote' scp (-t and -f)
+ [scp](https://github.com/laher/scp-go)     | -r -P             | ?              | INCOMPLETE AND NOT WORKING WITH ALL SSH SERVERS.
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | 
  which   | -a                | n/a            | TODO: Windows treats current dir above PATH variables.
