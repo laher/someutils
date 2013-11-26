@@ -7,11 +7,37 @@ Some CLI utilities written in Go.
  * Covers similar ground to coreutils, but not intended as a replacement. (Won't ever support all commands & options).
  * Just because.
 
+Installation.
+---------
+
+### Method 1: download precompiled binaries
+
+ * [Some recent Windows binaries zipped up here](https://bintray.com/laher/utils/someutils/0.3.0/files). 
+ * Just unzip somewhere on your path. 
+ * (These binaries were built and uploaded with `goxc`, ofcourse)
+
+### Method 2: `some`, recommended for Unix systems
+
+   1. `go get github.com/laher/someutils/cmd/some`
+   2. `some ls`, `some pwd` etc
+
+### Method 3: `go install ./...` installs all binaries into your GOPATH
+   
+NOTE: On Unix systems in particular, **be careful that your system PATH elements come BEFORE `GOPATH` within your PATH environment variable**
+
+   1. `go get github.com/laher/someutils`
+   2. `cd <....>/someutils`
+   3. `go install ./...`
+   4. `ls`, `pwd` etc
+
+
 Scope etc
 ---------
-My target is to get my Windows CLI a bit closer to being as productive as my Linux CLI, by creating many small utilities under one umbrella.
-Some commands are ubiquitous anyway (such as echo,cd,whoami), some are just too big, and some are hard to acheive with pure Go:
- 
+My main target is to get my Windows CLI a bit closer to being as productive as my Linux CLI, by creating many small utilities under one umbrella.
+Some commands are excluded because they're either ubiquitous anyway (such as echo,cd,whoami), just too big, or hard to acheive with pure Go.
+
+I'll just keep adding stuff as I need it. Contributions welcome!
+
 ### Progress
 
 So far, limited versions of the following commands are available:
@@ -63,3 +89,8 @@ You can also use 'some [cmd] [args...]' for any of the above.
  * ps
  * fsck
  * dig (unless I can construct raw DNS requests & collect responses)
+
+See Also
+--------
+
+ * I have separated out the 'flag' functionality into a separate package, [uggo](https://github.com/laher/uggo)
