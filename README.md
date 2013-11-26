@@ -12,8 +12,8 @@ Installation.
 
 ### Method 1: download precompiled binaries
 
- * [Some recent Windows binaries zipped up here](https://bintray.com/laher/utils/someutils/0.3.0/files). 
- * Just unzip somewhere on your path. 
+ * Grab some recent (v0.3.0) Windows binaries zipped up for [32-bit Windows](http://dl.bintray.com/laher/utils/someutils_0.3.0_windows_386.zip) and [64-bit Windows](http://dl.bintray.com/laher/utils/someutils_0.3.0_windows_amd64.zip). 
+ * Just unzip somewhere on your %PATH% (environment variable). 
  * (These binaries were built and uploaded with `goxc`, ofcourse)
 
 ### Method 2: `some`, recommended for Unix systems
