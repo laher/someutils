@@ -43,13 +43,11 @@ func Cp(call []string) error {
 
 	srcGlobs := args[0 : len(args)-1]
 	dest := args[len(args)-1]
-	//fmt.Printf("globs %v\n", srcGlobs)
 	for _, srcGlob := range srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
 			return err
 		}
-		//fmt.Printf(" %v\n", srces)
 		for _, src := range srces {
 			err = copyFile(src, dest, options)
 			if err != nil {

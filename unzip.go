@@ -55,7 +55,7 @@ func containsGlob(haystack []string, needle string) bool {
 	for _, item := range haystack {
 		m, err := filepath.Match(item, needle)
 		if err != nil {
-			fmt.Printf("Glob error %v", err)
+			fmt.Fprintf(os.Stderr, "Glob error %v", err)
 			return false
 		}
 		if m == true {
@@ -98,7 +98,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 			return err
 		} else {
 			//doesnt exist
-			//fmt.Printf("Destination %s does not exist\n", destDir)
 			err = os.MkdirAll(destDir, 0777) //TODO review permissions
 			if err != nil {
 				return err
@@ -108,7 +107,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 		if !dinf.IsDir() {
 			return errors.New("destination is an existing non-directory")
 		}
-		//fmt.Printf("Dir %s does exist\n", destDir)
 	}
 
 	// Iterate through the files in the archive,
@@ -117,7 +115,7 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 		finf := f.FileHeader.FileInfo()
 		flags := f.FileHeader.Flags
 		if flags&1 == 1 {
-			fmt.Printf("WARN: Skipping password protected file (flags %v, '%s')\n", flags, f.Name)
+			fmt.Fprintf(os.Stderr, "WARN: Skipping password protected file (flags %v, '%s')\n", flags, f.Name)
 		} else {
 			rc, err := f.Open()
 			if err != nil {
@@ -132,7 +130,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 						return err
 					} else {
 						//doesnt exist
-						//fmt.Printf("Destination %s does not exist\n", destFileName)
 						err = os.MkdirAll(destFileName, finf.Mode())
 						if err != nil {
 							return err
@@ -142,10 +139,8 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 					if !fdinf.IsDir() {
 						return errors.New("destination " + destFileName + " is an existing non-directory")
 					}
-					//fmt.Printf("Dir %s does exist\n", destFileName)
 				}
 			} else {
-				//fmt.Printf("Destination is %s\n", destFileName)
 				fileDestDir := filepath.Dir(destFileName)
 				if fileDestDir != destDir {
 					fdinf, err := os.Stat(fileDestDir)
@@ -154,7 +149,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 							return err
 						} else {
 							//doesnt exist
-							//fmt.Printf("Destination %s does not exist\n", fileDestDir)
 							err = os.MkdirAll(fileDestDir, 0777) //TODO review dir permissions
 							if err != nil {
 								return err
@@ -164,7 +158,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 						if !fdinf.IsDir() {
 							return errors.New("destination " + fileDestDir + " is an existing non-directory")
 						}
-						//fmt.Printf("Dir %s does exist\n", fileDestDir)
 					}
 				}
 				//TODO remove on error
@@ -181,7 +174,6 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 			}
 			rc.Close()
 		}
-		//fmt.Println()
 	}
 	return nil
 }

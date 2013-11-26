@@ -29,14 +29,13 @@ func mv(call []string) error {
 	args := flagSet.Args()
 
 	if len(args) < 2 {
-		println("`mv` [options] [src...] [dest]")
-		flagSet.PrintDefaults()
-		return nil
+		fmt.Fprintf(os.Stderr, "Error: not enough arguments\n\n")
+		flagSet.Usage()
+		return errors.New("Not enough arguments")
 	}
 
 	srcGlobs := args[0 : len(args)-1]
 	dest := args[len(args)-1]
-	//fmt.Printf("globs %v\n", srcGlobs)
 	for _, srcGlob := range srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
@@ -46,11 +45,10 @@ func mv(call []string) error {
 			return errors.New(fmt.Sprintf("Source glob '%s' does not match any files\n", srcGlob))
 		}
 
-		//fmt.Printf(" %v\n", srces)
 		for _, src := range srces {
 			err = moveFile(src, dest)
 			if err != nil {
-				fmt.Printf("Error %v\n", err)
+				fmt.Fprintf(os.Stderr, "Error %v\n", err)
 				return err
 			}
 		}

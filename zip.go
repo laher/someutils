@@ -3,7 +3,6 @@ package someutils
 import (
 	"archive/zip"
 	"errors"
-	"fmt"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -83,7 +82,7 @@ func ZipItems(zipFilename string, itemsToArchive []string) error {
 }
 
 func addFileToZIP(zw *zip.Writer, item ArchiveItem) error {
-	fmt.Printf("Adding %s\n", item.FileSystemPath)
+	//fmt.Printf("Adding %s\n", item.FileSystemPath)
 	binfo, err := os.Stat(item.FileSystemPath)
 	if err != nil {
 		return err
