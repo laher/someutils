@@ -1,12 +1,12 @@
 package someutils
 
 const (
-	VERSION = "0.3.2"
+	VERSION = "0.3.4"
 )
 
 type Util struct {
-	Name		string
-	Function	func([]string) error
+	Name     string
+	Function func([]string) error
 }
 
 var (

@@ -79,6 +79,7 @@ func Cat(call []string) error {
 						return err
 					}
 				}
+				file.Close()
 			} else {
 				return err
 			}
