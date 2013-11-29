@@ -3,12 +3,13 @@ package someutils
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"github.com/laher/uggo"
 	"os"
 )
 
 type HeadOptions struct {
-	lines     int
+	lines int
 }
 
 func init() {
@@ -33,36 +34,39 @@ func Head(call []string) error {
 
 	if len(flagSet.Args()) > 0 {
 		for _, fileName := range flagSet.Args() {
-			if file, err := os.Open(fileName); err == nil {
-				scanner := bufio.NewScanner(file)
-				line := 1
-				for scanner.Scan() && line <= options.lines {
-					text := scanner.Text()
-					fmt.Fprintf(os.Stdout, "%s\n", text)
-					line++
-				}
-				err := scanner.Err()
-				if err != nil {
-					return err
-				}
+			file, err := os.Open(fileName)
+			err = head(file, options)
+			if err != nil {
+				return err
+			}
+			err = head(file, options)
+			if err != nil {
 				file.Close()
-			} else {
+				return err
+			}
+			err = file.Close()
+			if err != nil {
 				return err
 			}
 		}
 	} else {
 		//stdin ..
-		scanner := bufio.NewScanner(os.Stdin)
-		line := 1
-		for scanner.Scan() && line <= options.lines {
-			text := scanner.Text()
-			fmt.Fprintf(os.Stdout, "%s\n", text)
-			line++
-		}
-		err := scanner.Err()
-		if err != nil {
-			return err
-		}
+		return head(os.Stdin, options)
+	}
+	return nil
+}
+
+func head(file io.Reader, options HeadOptions) error {
+	scanner := bufio.NewScanner(file)
+	line := 1
+	for scanner.Scan() && line <= options.lines {
+		text := scanner.Text()
+		fmt.Fprintf(os.Stdout, "%s\n", text)
+		line++
+	}
+	err := scanner.Err()
+	if err != nil {
+		return err
 	}
 	return nil
 }

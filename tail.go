@@ -3,12 +3,13 @@ package someutils
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"github.com/laher/uggo"
 	"os"
 )
 
 type TailOptions struct {
-	lines     int
+	lines int
 }
 
 func init() {
@@ -33,62 +34,62 @@ func Tail(call []string) error {
 
 	if len(flagSet.Args()) > 0 {
 		for _, fileName := range flagSet.Args() {
-			if file, err := os.Open(fileName); err == nil {
-				var buffer []string
-				scanner := bufio.NewScanner(file)
-				lastLine := options.lines - 1
-				for scanner.Scan() {
-					text := scanner.Text()
-					lastLine++
-				        if lastLine == options.lines {
-						 lastLine = 0
-					}
-					if lastLine >= len(buffer) {
-				        	buffer = append(buffer, text);
-					} else {
-				        	buffer[lastLine] = text;
-					}
-				}
-				err := scanner.Err()
-				if err != nil {
-					return err
-				}
-				err = file.Close()
-				if err != nil {
-					return err
-				}
-				//fmt.Fprintf(os.Stdout, "%s\n", text)
-				if lastLine == options.lines - 1 {
-					for _, r := range buffer {
-						println(r)
-					}
-				} else {
-					for _, r := range buffer[lastLine+1:] {
-						println(r)
-					}
-					//if lastLine > 0 {
-						for _, r := range buffer[:lastLine+1] {
-							println(r)
-						}
-					//}
-				}
-			} else {
+			file, err := os.Open(fileName)
+			if err != nil {
+				return err
+			}
+			err = tail(file, options)
+			if err != nil {
+				file.Close()
+				return err
+			}
+			err = file.Close()
+			if err != nil {
 				return err
 			}
 		}
 	} else {
 		//stdin ..
-		scanner := bufio.NewScanner(os.Stdin)
-		line := 1
-		for scanner.Scan() && line <= options.lines {
-			text := scanner.Text()
-			fmt.Fprintf(os.Stdout, "%s\n", text)
-			line++
+		return tail(os.Stdin, options)
+	}
+	return nil
+}
+
+func tail(file io.Reader, options TailOptions) error {
+	var buffer []string
+	scanner := bufio.NewScanner(file)
+	lastLine := options.lines - 1
+	for scanner.Scan() {
+		text := scanner.Text()
+		lastLine++
+		if lastLine == options.lines {
+			lastLine = 0
 		}
-		err := scanner.Err()
-		if err != nil {
-			return err
+		if lastLine >= len(buffer) {
+			buffer = append(buffer, text)
+		} else {
+			buffer[lastLine] = text
 		}
+	}
+	err := scanner.Err()
+	if err != nil {
+		return err
+	}
+
+	//fmt.Fprintf(os.Stdout, "%s\n", text)
+	if lastLine == options.lines-1 {
+		for _, r := range buffer {
+			println(r)
+		}
+	} else {
+		for _, r := range buffer[lastLine+1:] {
+			println(r)
+		}
+		//if lastLine > 0 {
+		for _, r := range buffer[:lastLine+1] {
+			println(r)
+		}
+		//}
 	}
 	return nil
 }
