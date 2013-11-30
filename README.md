@@ -50,6 +50,8 @@ You can also use 'some [cmd] [args...]' for any of these.
  cat     | -Ens              | Yes            | 
  cp      | -r                | n/a            | TODO: check symlink behaviour. Test large file support
  grep    | -nvHi -E -P       | Yes            | TODO: binary files support. !!No support for BRE - uses -E by default.
+ gunzip  | -k                | TODO           | TODO: -f, prompt when file exists
+ gzip    | -k                | TODO           | TODO: -f, prompt when file exists
  head    | -n                | Yes            | TODO: -c
  ls      | -lahr -1          | Yes            | TODO: -p -t
  mv      |                   | n/a            | TODO: check symlink behaviour
