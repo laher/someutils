@@ -43,54 +43,58 @@ I'll just keep adding stuff as I need it. Contributions welcome!
 ### Progress
 
 So far, limited versions of the following commands are available:
+You can also use 'some [cmd] [args...]' for any of these.
  
  Command | Options supported | STDIN support  | Notes
  --------|-------------------|----------------|------------------------
  cat     | -Ens              | Yes            | 
- cp      | -r                | n/a            | TODO: check symlink behaviour
+ cp      | -r                | n/a            | TODO: check symlink behaviour. Test large file support
  grep    | -nvHi -E -P       | Yes            | TODO: binary files support. !!No support for BRE - uses -E by default.
+ head    | -n                | Yes            | TODO: -c
  ls      | -lahr -1          | Yes            | TODO: -p -t
  mv      |                   | n/a            | TODO: check symlink behaviour
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | TODO: check symlink behaviour
- [scp](https://github.com/laher/scp-go)     | -r -P             | ?              | INCOMPLETE AND NOT WORKING WITH ALL SSH SERVERS.
+ [scp](https://github.com/laher/scp-go)     | -r -P             | ?              | INCOMPLETE - see [scp-go](https://github.com/laher/scp-go) .
+ tail    | -n                | Yes            | TODO: -c, optimisation for large files, -F (similar to -f but not tracking inodes). I think -f would be harder to achieve.
  touch   |                   | n/a            | 
- unzip   | -t                | TODO(STDOUT)   | 
- which   | -a                | n/a            | TODO: Windows treats current dir above PATH variables.
- [wget](https://github.com/laher/wget-go)    | -c -o             | n/a            | TODO: multi-threading? (not part of real wget)
- zip     |                   | TODO           | No password support. 
+ unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
+ which   | -a                | n/a            | 
+ wget    | -c -o             | n/a            | TODO: multi-threading? (not part of real wget). See [wget-go](https://github.com/laher/wget-go)
+ zip     |                   | TODO           | Password support would not be straightforward (not supported by standard lib)
  
-You can also use 'some [cmd] [args...]' for any of the above.
 
 ### ToMaybeDo
  * tar,gzip,gunzip
  * stat,size,file,split,type
- * tee,split,join,head,tail (tail -f??)
- * chmod/chown (relevant?)
+ * tee,split,join
+ * chmod/chown (relevant? Yes I think so)
  * diff (too big? Maybe a minimal version would be good here)
  * more (how easy is it?)
- * du/dh (need OS-specifics?)
- * find/locate
- * ln (would it need some non-Go stuff for Windows? YES at this stage)
- * ps,kill,pgrep,pkill
- * id,w,which
- * tailf (tail -f). How easy would this be?
- * ssh (terminal handling might be too challenging)
-
+ * du/dh (need OS-specifics: syscall would probably cover it for Unix and Windows)
+ * find/locate (find is a bit of a monster. locate is probably a stretch)
+ * ln (would it need some non-Go stuff for Windows? Yes - maybe an 'exec' at this stage)
+ * ps,kill,pgrep,pkill (need to explore mileage of os.FindProcess, syscall.Kill)
+ * id,w (is it doable cross-platform?)
+ * sshd (minimal version, for hosting file transfers etc), ssh (maybe just for running remote commands. Terminal handling might be too challenging for now)
+ * traceroute (see wtn. Requires setuid & therefore chowning + chmodding on Unix - on Windows I think you'd just need to run as administrator)
+ * ping (see above)
+ * dig (I think. Raw DNS requests & collect responses. Hmm, investigate go.net packages)
+ * chroot (chroot possible for unix via syscall - see gobox)
+ 
 ### TooBig?
  * less
  * a text editor
  * top
- * dd
+ * dd (I guess. Maybe not)
  * awk, sed
  * xargs, find -exec
  * rsync (algorithms might be a bit hard)
+ * cron (I guess service handling is another chapter aswell)
  
 ### Not possible/easy with pure Go
- * cron,chroot,bg,fg
- * ps
+ * bg,fg 
  * fsck
- * dig (unless I can construct raw DNS requests & collect responses)
 
 See Also
 --------
