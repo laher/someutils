@@ -57,8 +57,8 @@ You can also use 'some [cmd] [args...]' for any of these.
  mv      |                   | n/a            | TODO: check symlink behaviour
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | TODO: check symlink behaviour
- [scp](https://github.com/laher/scp-go)     | -r -P             | ?              | INCOMPLETE - see [scp-go](https://github.com/laher/scp-go) .
- tail    | -n                | Yes            | TODO: -c, optimisation for large files, -F (similar to -f but not tracking inodes). I think -f would be harder to achieve.
+ scp     | -r -P             | ?              | INCOMPLETE - see [scp-go](https://github.com/laher/scp-go) .
+ tail    | -n -F             | Yes            | TODO: -c, -f (by descriptor rather than by name). Bug: won't currently print last line unless terminated by a CR.
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
  which   | -a                | n/a            | 

@@ -6,10 +6,14 @@ import (
 	"io"
 	"github.com/laher/uggo"
 	"os"
+	"time"
 )
 
 type TailOptions struct {
-	lines int
+	Lines int
+	FollowByDescriptor bool
+	FollowByName bool
+	SleepInterval float64
 }
 
 func init() {
@@ -21,7 +25,11 @@ func init() {
 func Tail(call []string) error {
 	options := TailOptions{}
 	flagSet := uggo.NewFlagSetDefault("tail", "[options] [files...]", VERSION)
-	flagSet.AliasedIntVar(&options.lines, []string{"n", "lines"}, 10, "number of lines to print")
+	flagSet.AliasedIntVar(&options.Lines, []string{"n", "lines"}, 10, "number of lines to print")
+	flagSet.AliasedFloat64Var(&options.SleepInterval, []string{"s", "sleep"}, 1.0, "how long to sleep")
+	//TODO!
+	//flagSet.AliasedStringVar(&options.Follow, []string{"f", "follow"}, "", "follow (name|descriptor). Default is by descriptor (unsupported so far!!)")
+	flagSet.BoolVar(&options.FollowByName, "F", false, "follow by name")
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Flag error:  %v\n\n", err.Error())
@@ -34,11 +42,24 @@ func Tail(call []string) error {
 
 	if len(flagSet.Args()) > 0 {
 		for _, fileName := range flagSet.Args() {
+			finf, err := os.Stat(fileName)
+			if err != nil {
+				return err
+			}
 			file, err := os.Open(fileName)
 			if err != nil {
 				return err
 			}
-			err = tail(file, options)
+			seek := int64(0)
+			if finf.Size() > 10000 {
+				//just get last 10K (good enough for now)
+				seek = finf.Size() - 10000
+				_, err = file.Seek(seek, 0)
+				if err != nil {
+					return err
+				}
+			}
+			end, err := tail(file, seek, options)
 			if err != nil {
 				file.Close()
 				return err
@@ -47,22 +68,59 @@ func Tail(call []string) error {
 			if err != nil {
 				return err
 			}
+			if options.FollowByName {
+				sleepIntervalMs := time.Duration(options.SleepInterval * 1000)
+				for {
+					//sleep n.x seconds
+					//use milliseconds to get some accuracy with the int64
+					time.Sleep(sleepIntervalMs * time.Millisecond)
+					finf, err := os.Stat(fileName)
+					if err != nil {
+						return err
+					}
+					file, err := os.Open(fileName)
+					if err != nil {
+						return err
+					}
+					_, err = file.Seek(end, 0)
+					if err != nil {
+						return err
+					}
+					if finf.Size() > end {
+						end, err = tail(file, end, options)
+						if err != nil {
+							file.Close()
+							return err
+						}
+					} else {
+						//TODO start again
+					}
+					err = file.Close()
+					if err != nil {
+						return err
+					}
+				}
+			}
 		}
 	} else {
 		//stdin ..
-		return tail(os.Stdin, options)
+		_, err = tail(os.Stdin, 0, options)
+		return err
 	}
 	return nil
 }
 
-func tail(file io.Reader, options TailOptions) error {
+func tail(file io.Reader, start int64, options TailOptions) (int64, error) {
 	var buffer []string
+	end := start
 	scanner := bufio.NewScanner(file)
-	lastLine := options.lines - 1
+	lastLine := options.Lines - 1
+	
 	for scanner.Scan() {
 		text := scanner.Text()
+		end += int64(len(text) + 1) //for the \n character
 		lastLine++
-		if lastLine == options.lines {
+		if lastLine == options.Lines {
 			lastLine = 0
 		}
 		if lastLine >= len(buffer) {
@@ -73,11 +131,11 @@ func tail(file io.Reader, options TailOptions) error {
 	}
 	err := scanner.Err()
 	if err != nil {
-		return err
+		return end, err
 	}
 
 	//fmt.Fprintf(os.Stdout, "%s\n", text)
-	if lastLine == options.lines-1 {
+	if lastLine == options.Lines-1 {
 		for _, r := range buffer {
 			println(r)
 		}
@@ -91,5 +149,5 @@ func tail(file io.Reader, options TailOptions) error {
 		}
 		//}
 	}
-	return nil
+	return end, nil
 }
