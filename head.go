@@ -3,8 +3,8 @@ package someutils
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"github.com/laher/uggo"
+	"io"
 	"os"
 )
 

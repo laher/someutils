@@ -3,17 +3,17 @@ package someutils
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"github.com/laher/uggo"
+	"io"
 	"os"
 	"time"
 )
 
 type TailOptions struct {
-	Lines int
+	Lines              int
 	FollowByDescriptor bool
-	FollowByName bool
-	SleepInterval float64
+	FollowByName       bool
+	SleepInterval      float64
 }
 
 func init() {
@@ -115,7 +115,7 @@ func tail(file io.Reader, start int64, options TailOptions) (int64, error) {
 	end := start
 	scanner := bufio.NewScanner(file)
 	lastLine := options.Lines - 1
-	
+
 	for scanner.Scan() {
 		text := scanner.Text()
 		end += int64(len(text) + 1) //for the \n character

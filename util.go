@@ -17,6 +17,11 @@ func Register(u Util) {
 	allUtils[u.Name] = u
 }
 
+func Exists(name string) bool {
+	_, exists := allUtils[name]
+	return exists
+}
+
 func Call(name string, args []string) error {
 	return allUtils[name].Function(args)
 }
