@@ -1,4 +1,7 @@
+//+build !freebsd,!openbsd,!netbsd
+
 package main
+
 
 import (
 	"fmt"

@@ -1,3 +1,5 @@
+//+build !freebsd,!netbsd,!openbsd,!plan9
+
 package someutils
 
 import (
