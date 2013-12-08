@@ -44,9 +44,9 @@ func Wc(call []string) error {
 			options.IsBytes = true
 		}
 		for _, fileName := range flagSet.Args() {
-			bytes := int64(-1)
-			words := int64(-1)
-			lines := int64(-1)
+			bytes := int64(0)
+			words := int64(0)
+			lines := int64(0)
 			//get byte count
 			file, err := os.Open(fileName)
 			if err != nil {
@@ -76,9 +76,9 @@ func Wc(call []string) error {
 		if !options.IsWords && !options.IsLines && !options.IsBytes {
 			options.IsWords = true
 		}
-		bytes := int64(-1)
-		words := int64(-1)
-		lines := int64(-1)
+		bytes := int64(0)
+		words := int64(0)
+		lines := int64(0)
 		err = wc(os.Stdin, options, &bytes, &words, &lines)
 		if err != nil {
 			return err
@@ -127,34 +127,7 @@ func wc(file io.Reader, options WcOptions, bytes *int64, words *int64, lines *in
 		if c == '\n' {
 			*lines += 1
 		}
-/*
-		scanner := bufio.NewScanner(file)
-		// Count the lines
-		count := int64(0)
-		for scanner.Scan() {
-			count++
-		}
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintln(os.Stderr, "reading input:", err)
-			return err
-		}
-		fmt.Printf("lines: %d\n", count)
-		*lines = count
-	} else if options.IsWordsOnly {
-		scanner := bufio.NewScanner(file)
-		scanner.Split(bufio.ScanWords)
-		// Count the words.
-		count := int64(0)
-		for scanner.Scan() {
-			count++
-		}
-		if err := scanner.Err(); err != nil {
-			fmt.Fprintln(os.Stderr, "reading input:", err)
-			return err
-		}
-		*words = count
-	}
-*/
+
 	}
 	return err
 }
