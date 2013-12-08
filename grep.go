@@ -95,7 +95,7 @@ func grep(reg *regexp.Regexp, files []string, options GrepOptions) error {
 		if err != nil {
 			return err
 		}
-		if fi.IsDir {
+		if fi.IsDir() {
 			//recurse here
 			if options.IsRecurse {
 				//
