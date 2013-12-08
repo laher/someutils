@@ -42,6 +42,7 @@ func Grep(call []string) error {
 	flagSet.AliasedBoolVar(&options.IsPrintFilename, []string{"H", "with-filename"}, true, "print the file name for each match")
 	flagSet.AliasedBoolVar(&options.IsPrintLineNumber, []string{"n", "line-number"}, false, "print the line number for each match")
 	flagSet.AliasedBoolVar(&options.IsInvertMatch, []string{"v", "invert-match"}, false, "invert match")
+	flagSet.AliasedBoolVar(&options.IsRecurse, []string{"r", "recurse"}, false, "recurse into subdirectories")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
@@ -90,6 +91,17 @@ func Grep(call []string) error {
 
 func grep(reg *regexp.Regexp, files []string, options GrepOptions) error {
 	for _, filename := range files {
+		fi, err := os.Stat(filename)
+		if err != nil {
+			return err
+		}
+		if fi.IsDir {
+			//recurse here
+			if options.IsRecurse {
+				//
+				fmt.Printf("Recursion not implemented yet\n")
+			}
+		}
 		file, err := os.Open(filename)
 		if err != nil {
 			return err
