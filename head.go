@@ -35,7 +35,6 @@ func Head(call []string) error {
 	if len(flagSet.Args()) > 0 {
 		for _, fileName := range flagSet.Args() {
 			file, err := os.Open(fileName)
-			err = head(file, options)
 			if err != nil {
 				return err
 			}
