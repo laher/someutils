@@ -1,6 +1,6 @@
 {
 	"BuildConstraints": "windows",
-	"PackageVersion": "0.3.8",
+	"PackageVersion": "0.3.9",
 	"TaskSettings": {
 		"bintray": {
 			"downloadspage": "bintray.md",
