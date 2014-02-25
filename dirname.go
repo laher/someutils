@@ -22,7 +22,9 @@ func Dirname(call []string) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	dir := path.Dir(flagSet.Args()[0])
-	println(dir)
+	for _, f := range flagSet.Args() {
+		dir := path.Dir(f)
+		println(dir)
+	}
 	return nil
 }

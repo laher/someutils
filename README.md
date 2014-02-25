@@ -47,8 +47,10 @@ You can also use 'some [cmd] [args...]' for any of these.
  
  Command | Options supported | STDIN support  | Notes
  --------|-------------------|----------------|------------------------
+ basename|                   |                | TODO: -a, -z
  cat     | -Ens              | Yes            | 
  cp      | -r                | n/a            | TODO: check symlink behaviour. Test large file support
+ dirname |                   | n/a            |
  grep    | -nvHi -E -P       | Yes            | TODO: binary files support. !!No support for BRE - uses -E by default.
  gunzip  | -k                | TODO           | TODO: -f, prompt when file exists
  gzip    | -k                | TODO           | TODO: -f, prompt when file exists
@@ -58,18 +60,21 @@ You can also use 'some [cmd] [args...]' for any of these.
  pwd     |                   | n/a            | 
  rm      | -r                | n/a            | TODO: check symlink behaviour
  scp     | -r -P             | ?              | INCOMPLETE - see [scp-go](https://github.com/laher/scp-go) .
+ sleep   |                   | n/a            |
  tail    | -n -F             | Yes            | TODO: -c, -f (by descriptor rather than by name). Bug: won't currently print last line unless terminated by a CR.
+ tee     | -a                | Yes            | TODO: -i
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
+ wc      | -c -l -w          |                | 
  which   | -a                | n/a            | 
  wget    | -c -o             | n/a            | TODO: multi-threading? (not part of real wget). See [wget-go](https://github.com/laher/wget-go)
  zip     |                   | TODO           | Password support would not be straightforward (not supported by standard lib)
  
 
 ### ToMaybeDo
- * tar,gzip,gunzip
- * stat,size,file,split,type
- * tee,split,join
+ * tar (in development)
+ * stat,size,file,type
+ * split,join
  * chmod/chown (relevant? Yes I think so)
  * diff (too big? Maybe a minimal version would be good here)
  * more (how easy is it?)

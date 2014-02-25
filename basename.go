@@ -1,8 +1,10 @@
 package someutils
 
 import (
+	"errors"
 	"github.com/laher/uggo"
 	"path"
+	"strings"
 )
 
 func init() {
@@ -22,7 +24,16 @@ func Basename(call []string) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
+	if len(flagSet.Args()) < 1 {
+		return errors.New("Missing operand")
+	}
 	base := path.Base(flagSet.Args()[0])
+	if len(flagSet.Args()) > 1 {
+		if strings.HasSuffix(base, flagSet.Args()[1]) {
+			last := strings.LastIndex(base, flagSet.Args()[1])
+			base = base[:last]
+		}
+	}
 	println(base)
 	return nil
 }
