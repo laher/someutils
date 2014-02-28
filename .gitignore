@@ -29,3 +29,5 @@ _testmain.go
 *.local.json
 test.json
 test
+*.tar
+*.zip
