@@ -62,6 +62,7 @@ You can also use 'some [cmd] [args...]' for any of these.
  scp     | -r -P             | ?              | INCOMPLETE - see [scp-go](https://github.com/laher/scp-go) .
  sleep   |                   | n/a            |
  tail    | -n -F             | Yes            | TODO: -c, -f (by descriptor rather than by name). Bug: won't currently print last line unless terminated by a CR.
+ tar     | -cvf -x -t -r     | Yes (IN+OUT)   | Just the core functionality so far.
  tee     | -a                | Yes            | TODO: -i
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
@@ -72,7 +73,6 @@ You can also use 'some [cmd] [args...]' for any of these.
  
 
 ### ToMaybeDo
- * tar (in development)
  * stat,size,file,type
  * split,join
  * chmod/chown (relevant? Yes I think so)
