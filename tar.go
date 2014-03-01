@@ -1,22 +1,22 @@
 package someutils
 
 import (
+	"archive/tar"
+	"errors"
 	"fmt"
 	"github.com/laher/uggo"
 	"io"
 	"os"
-	"archive/tar"
-	"errors"
 	"path/filepath"
 )
 
 type TarOptions struct {
-	IsCreate   bool
-	IsList     bool
-	IsExtract  bool
+	IsCreate  bool
+	IsList    bool
+	IsExtract bool
 	IsAppend  bool
 	//IsCatenate bool
-	IsVerbose  bool
+	IsVerbose       bool
 	ArchiveFilename string
 }
 
@@ -26,7 +26,7 @@ func init() {
 		Tar})
 }
 
-func countTrue(args... bool) int {
+func countTrue(args ...bool) int {
 	count := 0
 	for _, arg := range args {
 		if arg {
@@ -198,8 +198,9 @@ func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptio
 		destFileName := filepath.Join(destDir, hdr.Name)
 		finf := hdr.FileInfo()
 		if finf.IsDir() {
-
-			fmt.Printf("Making dir %s:\n", hdr.Name)
+			if options.IsVerbose {
+				fmt.Printf("Making dir %s:\n", hdr.Name)
+			}
 			//mkdir ...
 			fdinf, err := os.Stat(destFileName)
 			if err != nil {

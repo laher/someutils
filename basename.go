@@ -12,6 +12,7 @@ func init() {
 		"basename",
 		Basename})
 }
+
 //very basic for the moment. No removal of suffix
 func Basename(call []string) error {
 

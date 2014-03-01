@@ -1,13 +1,12 @@
 package someutils
 
 import (
-	"fmt"
-	"io"
 	"bufio"
+	"fmt"
 	"github.com/laher/uggo"
+	"io"
 	"os"
 )
-
 
 type WcOptions struct {
 	IsBytes bool
@@ -26,7 +25,7 @@ func Wc(call []string) error {
 	flagSet := uggo.NewFlagSetDefault("wc", "[options]", VERSION)
 	flagSet.AliasedBoolVar(&options.IsLines, []string{"l", "lines"}, false, "Count lines")
 	flagSet.AliasedBoolVar(&options.IsWords, []string{"w", "words"}, false, "Count words")
-//	flagSet.AliasedBoolVar(&options.IsChars, []string{"m", "chars"}, false, "Count characters")
+	//	flagSet.AliasedBoolVar(&options.IsChars, []string{"m", "chars"}, false, "Count characters")
 	flagSet.AliasedBoolVar(&options.IsBytes, []string{"c", "bytes"}, false, "Count bytes")
 	err := flagSet.Parse(call[1:])
 

@@ -2,11 +2,11 @@
 
 package main
 
-
 import (
 	"fmt"
+	"os"
 )
 
 func main() {
-	fmt.Printf("Error: %v scp uses gopass which is not suported in *bsd except via c calls\n")
+	fmt.Fprintf(os.Stderr, "Error: %v scp uses gopass which is not suported in *bsd except via c calls\n")
 }

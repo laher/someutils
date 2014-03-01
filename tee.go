@@ -7,8 +7,9 @@ import (
 )
 
 type TeeOptions struct {
-	isAppend     bool
+	isAppend bool
 }
+
 func init() {
 	Register(Util{
 		"tee",
@@ -29,7 +30,7 @@ func Tee(call []string) error {
 	}
 	flag := os.O_CREATE
 	if options.isAppend {
-		flag = flag|os.O_APPEND
+		flag = flag | os.O_APPEND
 	}
 	writeables := flagSet.ArgsAsWriteables(flag, 0666)
 	files, err := uggo.OpenAll(writeables)

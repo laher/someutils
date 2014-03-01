@@ -17,7 +17,7 @@ func main() {
 	}
 	err := someutils.Call(os.Args[1], os.Args[1:])
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }

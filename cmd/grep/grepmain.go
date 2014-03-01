@@ -9,7 +9,7 @@ import (
 func main() {
 	err := someutils.Grep(os.Args)
 	if err != nil {
-		fmt.Printf("Returned error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Returned error: %v\n", err)
 		os.Exit(1)
 	}
 

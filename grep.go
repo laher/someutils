@@ -42,8 +42,8 @@ func Grep(call []string) error {
 	flagSet.AliasedBoolVar(&options.IsPrintFilename, []string{"H", "with-filename"}, true, "print the file name for each match")
 	flagSet.AliasedBoolVar(&options.IsPrintLineNumber, []string{"n", "line-number"}, false, "print the line number for each match")
 	flagSet.AliasedBoolVar(&options.IsInvertMatch, []string{"v", "invert-match"}, false, "invert match")
-// disable for now
-//	flagSet.AliasedBoolVar(&options.IsRecurse, []string{"r", "recurse"}, false, "recurse into subdirectories")
+	// disable for now
+	//	flagSet.AliasedBoolVar(&options.IsRecurse, []string{"r", "recurse"}, false, "recurse into subdirectories")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {

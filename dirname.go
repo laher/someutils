@@ -10,6 +10,7 @@ func init() {
 		"dirname",
 		Dirname})
 }
+
 //very basic for the moment. No removal of suffix
 func Dirname(call []string) error {
 

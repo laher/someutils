@@ -9,7 +9,7 @@ import (
 func main() {
 	err := someutils.Gunzip(os.Args)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 }
