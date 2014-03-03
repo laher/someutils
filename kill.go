@@ -10,8 +10,8 @@ import (
 
 func init() {
 	Register(Util{
-		"kill",
-		Kill})
+	"kill",
+	Kill})
 }
 
 // very basic way to kill process on windows
@@ -40,9 +40,9 @@ func Kill(call []string) error {
 			return err
 		}
 		if len(strings.Split(string(b), "\n")) <= 0 {
-			fmt.Printf("Can't kill %s \n", name)
+			fmt.Printf(" - %s still runing  \n", name)
 		} else {
-			fmt.Printf("Killed %s\n", name)
+			fmt.Printf(" - %s killed \n", name)
 		}
 	}
 
