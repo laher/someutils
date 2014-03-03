@@ -33,7 +33,7 @@ func Kill(call []string) error {
 		return errors.New("Missing process name")
 	}
 
-	for i := 0; i < args; i++ {
+	for i := 0; i < len(args); i++ {
 		name := args[i]
 		b, err := exec.Command("taskkill", "/f", "/im", name+"*").Output()
 		if err != nil {
