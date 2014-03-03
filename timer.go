@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/laher/uggo"
-	"log"
 	"os"
 	"os/exec"
 	"time"
@@ -12,11 +11,11 @@ import (
 
 func init() {
 	Register(Util{
-		"timer",
-		Timer})
+	"timer",
+	Timer})
 }
 
-// very basic way to kill process on windows
+// very basic way to Time execution on windows
 func Timer(call []string) error {
 	var cmd *exec.Cmd
 	start := time.Now()
@@ -43,9 +42,9 @@ func Timer(call []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
-		log.Fatal("#error: ", err)
+		return err
 	}
 
 	fmt.Println()
