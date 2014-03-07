@@ -1,6 +1,7 @@
 package someutils
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"os"
@@ -37,7 +38,7 @@ func NewPipes(in io.Reader, out io.Writer, errout io.Writer) Pipes {
 func StdPipes() Pipes {
 	return &ConcretePipes{os.Stdin, os.Stdout, os.Stderr}
 }
-
+/*
 //deprecated
 func Pipeline2(pipes Pipes, execable1 Execable, execable2 Execable) chan error {
 	e := make(chan error)
@@ -46,26 +47,16 @@ func Pipeline2(pipes Pipes, execable1 Execable, execable2 Execable) chan error {
 	pipes2 := &ConcretePipes{r, pipes.Out(), pipes.Err()}
 	go runAsync(execable1, pipes1, w, e)
 	go runAsync(execable2, pipes2, nil, e)
-	/*
-		go func() {
-				e <- execable1.Exec(pipes1)
-				err := w.Close()
-				if err != nil {
-					fmt.Fprintln(pipes.Err, "writer Close error ", err)
-				}
-		}()
-		go func() {
-				e <- execable2.Exec(pipes2)
-		}()
-	*/
 	return e
 }
-func runAsync(execable Execable, pipes Pipes, closer *io.PipeWriter, e chan error) {
+*/
+
+func runAsync(execable Execable, pipes Pipes, closers []io.Closer, e chan error) {
 	e <- execable.Exec(pipes)
-	if closer != nil {
+	for _, closer := range closers {
 		err := closer.Close()
 		if err != nil {
-			fmt.Fprintln(pipes.Err(), "writer Close error ", err)
+			fmt.Fprintln(pipes.Err(), "Close error ", err)
 		}
 	}
 }
@@ -73,25 +64,31 @@ func runAsync(execable Execable, pipes Pipes, closer *io.PipeWriter, e chan erro
 func Pipeline(pipes Pipes, execables ...Execable) chan error {
 
 	e := make(chan error)
-	var previousReader io.Reader
+	var previousReader *io.ReadCloser
+	//var previousWriter *io.WriteCloser
 	for i, execable := range execables {
-		var w *io.PipeWriter
+		var w io.WriteCloser
 		var r io.ReadCloser
 		var in io.Reader
 		var out io.Writer
+		closers := []io.Closer{}
 		if i == 0 {
 			in = pipes.In()
 		} else {
-			in = previousReader
+			in = *previousReader
+			//closers = append (closers, *previousWriter)
+			//closers = append (closers, *previousReader)
 		}
 		if i == len(execables)-1 {
 			out = pipes.Out()
 		} else {
 			r, w = io.Pipe()
 			out = w
+			closers = append (closers, w)
 		}
-		go runAsync(execable, &ConcretePipes{in, out, pipes.Err()}, w, e)
-		previousReader = r
+		go runAsync(execable, &ConcretePipes{in, out, pipes.Err()}, closers, e)
+		previousReader = &r
+		//previousWriter = &w
 	}
 	return e
 }
@@ -107,3 +104,25 @@ func Collect(e chan error, count int) []error {
 type Execable interface {
 	Exec(Pipes) error
 }
+
+
+type LineProcessorFunc func(Pipes, []byte) error
+
+func LineProcessor(pipes Pipes, fu LineProcessorFunc) error {
+	reader := bufio.NewReader(pipes.In())
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		err = fu(pipes, line)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+

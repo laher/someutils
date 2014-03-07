@@ -1,7 +1,6 @@
 package some
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
 	"github.com/laher/someutils"
@@ -91,26 +90,17 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 	}
 	return inputs, nil
 }
+
 func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
-	set1 := tr.Set1
-	inputs, err := convertSet1(set1)
+	inputs, err := convertSet1(tr.Set1)
 	if err != nil {
 		return err
 	}
-	set2 := tr.Set2
-	outputs, err := convertSet2(set2)
+	outputs, err := convertSet2(tr.Set2)
 	if err != nil {
 		return err
 	}
-	reader := bufio.NewReader(pipes.In())
-	for {
-		line, _, err := reader.ReadLine()
-		if err == io.EOF {
-			return nil
-		}
-		if err != nil {
-			return err
-		}
+	fu := func(pipes someutils.Pipes, line []byte) error {
 		out := line
 		for i, reg := range inputs {
 			var output string
@@ -122,12 +112,11 @@ func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
 			out = reg.ReplaceAll(out, []byte(output))
 		}
 		_, err = fmt.Fprintln(pipes.Out(), string(out))
-		if err != nil {
-			return err
-		}
+		return err
 	}
-	return nil
+	return someutils.LineProcessor(pipes, fu)
 }
+
 func NewTr() *SomeTr {
 	return new(SomeTr)
 }

@@ -61,7 +61,7 @@ func Test2pipes(t *testing.T) {
 	}
 	fmt.Printf("Errout: %+v\n", errout.String())
 }
-
+/*
 func TestPipeline2(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
@@ -77,6 +77,7 @@ func TestPipeline2(t *testing.T) {
 	fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
 	fmt.Printf("Errout: %+v\n", errout.String())
 }
+*/
 
 func TestPipeline(t *testing.T) {
 	var out bytes.Buffer
