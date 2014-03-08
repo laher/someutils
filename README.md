@@ -6,6 +6,12 @@ Some CLI utilities written in Go.
  * Mainly intended as Unix-like commands for Windows, but cross-platform anyway. 
  * Covers similar ground to coreutils, but not intended as a replacement. (Won't ever support all commands & options).
  * Just because.
+ * New in v0.5: you can use coreutils as a pure-Go alternative to cmd.Exec. e.g.
+
+	e := someutils.Pipeline(some.Cat("file.txt"), some.Tr("a", "b"))
+	someutils.CollectErrors(e, 2)
+ 
+ * WARNING: v0.5 branch is still in development. The API will still change before release.
 
 Installation.
 ---------
