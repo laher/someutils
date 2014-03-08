@@ -38,18 +38,6 @@ func NewPipes(in io.Reader, out io.Writer, errout io.Writer) Pipes {
 func StdPipes() Pipes {
 	return &ConcretePipes{os.Stdin, os.Stdout, os.Stderr}
 }
-/*
-//deprecated
-func Pipeline2(pipes Pipes, execable1 Execable, execable2 Execable) chan error {
-	e := make(chan error)
-	r, w := io.Pipe()
-	pipes1 := &ConcretePipes{pipes.In(), w, pipes.Err()}
-	pipes2 := &ConcretePipes{r, pipes.Out(), pipes.Err()}
-	go runAsync(execable1, pipes1, w, e)
-	go runAsync(execable2, pipes2, nil, e)
-	return e
-}
-*/
 
 func runAsync(execable Execable, pipes Pipes, closers []io.Closer, e chan error) {
 	e <- execable.Exec(pipes)
@@ -93,7 +81,7 @@ func Pipeline(pipes Pipes, execables ...Execable) chan error {
 	return e
 }
 
-func Collect(e chan error, count int) []error {
+func CollectErrors(e chan error, count int) []error {
 	errs := []error{}
 	for i := 0; i < count; i++ {
 		errs = append(errs, <-e)

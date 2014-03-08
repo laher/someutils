@@ -63,6 +63,7 @@ You can also use 'some [cmd] [args...]' for any of these.
  sleep   |                   | n/a            |
  tail    | -n -F             | Yes            | TODO: -c, -f (by descriptor rather than by name). Bug: won't currently print last line unless terminated by a CR.
  tar     | -cvf -x -t -r     | Yes (IN+OUT)   | Just the core functionality so far.
+ tr      |                   | Yes            | 
  tee     | -a                | Yes            | TODO: -i
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
@@ -74,7 +75,8 @@ You can also use 'some [cmd] [args...]' for any of these.
 
 ### ToMaybeDo
  * stat,size,file,type
- * split,join
+ * split,join,sort
+ * shred
  * chmod/chown (relevant? Yes I think so)
  * diff (too big? Maybe a minimal version would be good here)
  * more (how easy is it?)

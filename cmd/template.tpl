@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	err := some.BasenameCli(os.Args)
+	err := some.{{.NameUCF}}Cli(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

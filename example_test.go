@@ -12,11 +12,10 @@ type ExampleUtil struct {
 }
 
 func (ex *ExampleUtil) Exec(pipes Pipes) error {
-	fu := func(pipes Pipes, line []byte) error {
+	return LineProcessor(pipes, func(pipes Pipes, line []byte) error {
 		_, err := fmt.Fprintln(pipes.Out(), string(line))
 		return err
-	}
-	return LineProcessor(pipes, fu)
+	})
 }
 
 
@@ -26,7 +25,7 @@ func ExamplePipeline() {
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	pipes := NewPipes(in, os.Stdout, &errout)
 	e := Pipeline(pipes, &ExampleUtil{}, &ExampleUtil{})
-	errs := Collect(e, 2)
+	errs := CollectErrors(e, 2)
 	fmt.Fprintln(os.Stderr, errs)
 	// Output:
 	// Hi

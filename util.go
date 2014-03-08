@@ -1,7 +1,7 @@
 package someutils
 
 const (
-	VERSION = "0.3.8"
+	VERSION = "0.5.0"
 )
 
 type Util struct {

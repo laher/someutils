@@ -18,9 +18,10 @@ type SomeTr struct {
 	IsDelete     bool
 	IsComplement bool
 	IsReplace    bool
-	Set1	    string
-	Set2	    string
+	Set1         string
+	Set2         string
 }
+
 func (tr *SomeTr) Name() string {
 	return "tr"
 }
@@ -57,7 +58,7 @@ func convertSet2(set2 string) ([]string, error) {
 		lastChar := parts[1]
 		unicodePointEnd := int(lastChar[0])
 		outputs := []string{}
-		for i:= unicodePointStart; i<=unicodePointEnd;i++ {
+		for i := unicodePointStart; i <= unicodePointEnd; i++ {
 			st := string([]byte{byte(i)})
 			outputs = append(outputs, st)
 		}
@@ -74,7 +75,7 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 		unicodePointStart := int(firstChar[0])
 		lastChar := parts[1]
 		unicodePointEnd := int(lastChar[0])
-		for i:= unicodePointStart; i<=unicodePointEnd;i++ {
+		for i := unicodePointStart; i <= unicodePointEnd; i++ {
 			r, err := regexp.Compile(string([]byte{byte(i)}))
 			if err != nil {
 				return inputs, err
@@ -104,7 +105,7 @@ func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
 		out := line
 		for i, reg := range inputs {
 			var output string
-			if len(outputs)>i {
+			if len(outputs) > i {
 				output = outputs[i]
 			} else {
 				output = outputs[len(outputs)-1]
@@ -139,8 +140,12 @@ func TrC(set1 string) *SomeTr {
 	return tr
 }
 
-func TrCli(call []string, errOut io.Writer) (*SomeTr, error) {
+func TrCli(call []string) error {
 	tr := NewTr()
-	err := tr.ParseFlags(call, errOut)
-	return tr, err
+	pipes := someutils.StdPipes()
+	err := tr.ParseFlags(call, pipes.Err())
+	if err != nil {
+		return err
+	}
+	return tr.Exec(pipes)
 }
