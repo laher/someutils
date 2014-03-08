@@ -8,7 +8,8 @@ Some CLI utilities written in Go.
  * Just because.
  * New in v0.5: you can use coreutils as a pure-Go alternative to cmd.Exec. e.g.
 
-		e := someutils.Pipeline(some.Cat("file.txt"), some.Tr("a", "b"))
+		pipes := someutils.StdPipes()
+		e := someutils.Pipeline(pipes, some.Cat("file.txt"), some.Tr("a", "b"))
 		someutils.CollectErrors(e, 2)
  
  * WARNING: v0.5 branch is still in development. The API will still change before release.
