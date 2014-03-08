@@ -6,6 +6,7 @@ Some CLI utilities written in Go.
  * Mainly intended as Unix-like commands for Windows, but cross-platform anyway. 
  * Covers similar ground to coreutils, but not intended as a replacement. (Won't ever support all commands & options).
  * Just because.
+ * WARNING: someutils isn't intended for use as a library YET. The API can and will change, with the idea being to facilitate cross-platform, shell-like scripting in Go. If you're interested take a look at progress on the v0.5 branch.
 
 Installation.
 ---------
