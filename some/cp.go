@@ -1,4 +1,4 @@
-package someutils
+package some
 
 import (
 	"errors"
@@ -7,49 +7,67 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"github.com/laher/someutils"
 )
 
-type CpOptions struct {
-	Recursive bool
-}
-
 func init() {
-	Register(Util{
-		"cp",
-		Cp})
+	someutils.RegisterSome(func() someutils.SomeUtil { return NewCp() })
 }
 
-func Cp(call []string) error {
-	options := CpOptions{}
-	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", VERSION)
-	flagSet.AliasedBoolVar(&options.Recursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
+// SomeCp represents and performs a `cp` invocation
+type SomeCp struct {
+	// TODO: add members here
+	IsRecursive bool
+	SrcGlobs []string
+	Dest string
+}
 
+// Name() returns the name of the util
+func (cp *SomeCp) Name() string {
+	return "cp"
+}
+
+// TODO: add validation here
+
+// ParseFlags parses flags from a commandline []string
+func (cp *SomeCp) ParseFlags(call []string, errWriter io.Writer) error {
+	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", someutils.VERSION)
+	flagSet.AliasedBoolVar(&cp.IsRecursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
+	flagSet.SetOutput(errWriter)
+
+	// TODO add flags here
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
+
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
 
 	args := flagSet.Args()
-
 	if len(args) < 2 {
 		flagSet.Usage()
 		return errors.New("Not enough args")
 	}
 
-	srcGlobs := args[0 : len(args)-1]
-	dest := args[len(args)-1]
-	for _, srcGlob := range srcGlobs {
+	cp.SrcGlobs = args[0 : len(args)-1]
+	cp.Dest = args[len(args)-1]
+
+	return nil
+}
+
+// Exec actually performs the cp
+func (cp *SomeCp) Exec(pipes someutils.Pipes) error {
+	for _, srcGlob := range cp.SrcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
 			return err
 		}
 		for _, src := range srces {
-			err = copyFile(src, dest, options)
+			err = copyFile(src, cp.Dest, cp)
 			if err != nil {
 				return err
 			}
@@ -57,7 +75,8 @@ func Cp(call []string) error {
 	}
 	return nil
 }
-func copyFile(src, dest string, options CpOptions) error {
+
+func copyFile(src, dest string, cp *SomeCp) error {
 	//println("copy "+src+" to "+dest)
 
 	srcFile, err := os.Open(src)
@@ -69,7 +88,7 @@ func copyFile(src, dest string, options CpOptions) error {
 	if err != nil {
 		return err
 	}
-	if sinf.IsDir() && !options.Recursive {
+	if sinf.IsDir() && !cp.IsRecursive {
 		return errors.New("Omitting directory " + src)
 	}
 
@@ -80,7 +99,7 @@ func copyFile(src, dest string, options CpOptions) error {
 		if !os.IsNotExist(err) {
 			return err
 		} else {
-			//doesnt exist
+			//doesnt exist yet. New file/dir
 			destFull = dest
 		}
 	} else {
@@ -99,7 +118,7 @@ func copyFile(src, dest string, options CpOptions) error {
 		if !os.IsNotExist(err) {
 			return err
 		} else {
-			//doesnt exist
+			//doesnt exist. New file/dir
 			destExists = false
 		}
 	} else {
@@ -129,10 +148,16 @@ func copyFile(src, dest string, options CpOptions) error {
 			return err
 		}
 		for _, fi := range contents {
-			copyFile(filepath.Join(src, fi.Name()), destFull, options)
+			copyFile(filepath.Join(src, fi.Name()), destFull, cp)
 		}
 	} else {
-		destFile, err := os.OpenFile(destFull, os.O_CREATE, sinf.Mode())
+		flags := os.O_WRONLY
+		if !destExists {
+			flags = flags + os.O_CREATE
+		} else {
+			flags = flags + os.O_TRUNC
+		}
+		destFile, err := os.OpenFile(destFull, flags, sinf.Mode())
 		defer destFile.Close()
 		if err != nil {
 			return err
@@ -151,4 +176,28 @@ func copyFile(src, dest string, options CpOptions) error {
 		}
 	}
 	return nil
+}
+
+// Factory for *SomeCp
+func NewCp() *SomeCp {
+	return new(SomeCp)
+}
+
+// Fluent factory for *SomeCp
+func Cp(args ...string) *SomeCp {
+	cp := NewCp()
+	cp.SrcGlobs = args[0 : len(args)-1]
+	cp.Dest = args[len(args)-1]
+	return cp
+}
+
+// CLI invocation for *SomeCp
+func CpCli(call []string) error {
+	cp := NewCp()
+	pipes := someutils.StdPipes()
+	err := cp.ParseFlags(call, pipes.Err())
+	if err != nil {
+		return err
+	}
+	return cp.Exec(pipes)
 }
