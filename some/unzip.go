@@ -1,6 +1,7 @@
-package someutils
+package some
 
 import (
+	"github.com/laher/someutils"
 	"archive/zip"
 	"errors"
 	"fmt"
@@ -11,23 +12,44 @@ import (
 )
 
 func init() {
-	Register(Util{
-		"unzip",
-		Unzip})
+	someutils.RegisterSome(func() someutils.SomeUtil { return NewUnzip() })
 }
 
-func Unzip(call []string) error {
+// SomeUnzip represents and performs a `unzip` invocation
+type SomeUnzip struct {
+	// TODO: add members here
+	destDir string
+	isTest bool
 
-	flagSet := uggo.NewFlagSetDefault("unzip", "[options] file.zip [list]", VERSION)
+	zipname string
+	files []string
+}
+
+// Name() returns the name of the util
+func (unzip *SomeUnzip) Name() string {
+	return "unzip"
+}
+
+// TODO: add validation here
+
+// ParseFlags parses flags from a commandline []string
+func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) error {
+	flagSet := uggo.NewFlagSetDefault("unzip", "[options] file.zip [list...]", someutils.VERSION)
+	flagSet.SetOutput(errWriter)
 	destDir := "."
-	flagSet.StringVar(&destDir, "d", destDir, "destination directory")
+	flagSet.StringVar(&unzip.destDir, "d", destDir, "destination directory")
 	test := false
-	flagSet.BoolVar(&test, "t", test, "test archive data")
+	flagSet.BoolVar(&unzip.isTest, "t", test, "test archive data")
 
+	// TODO add flags here
+	
 	err := flagSet.Parse(call[1:])
 	if err != nil {
+		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		flagSet.Usage()
 		return err
 	}
+
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
@@ -35,15 +57,21 @@ func Unzip(call []string) error {
 	if len(args) < 1 {
 		return errors.New("No zip filename given")
 	}
-	zipname := args[0]
-	files := args[1:]
-	if test {
-		err = TestItems(zipname, files)
+	unzip.zipname = args[0]
+	unzip.files = args[1:]
+
+	return nil
+}
+
+// Exec actually performs the unzip
+func (unzip *SomeUnzip) Exec(pipes someutils.Pipes) error {
+	if unzip.isTest {
+		err := TestItems(unzip.zipname, unzip.files, pipes.Out(), pipes.Err())
 		if err != nil {
 			return err
 		}
 	} else {
-		err = UnzipItems(zipname, destDir, files)
+		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, pipes.Err())
 		if err != nil {
 			return err
 		}
@@ -51,11 +79,11 @@ func Unzip(call []string) error {
 	return nil
 }
 
-func containsGlob(haystack []string, needle string) bool {
+func containsGlob(haystack []string, needle string, errPipe io.Writer) bool {
 	for _, item := range haystack {
 		m, err := filepath.Match(item, needle)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Glob error %v", err)
+			fmt.Fprintf(errPipe, "Glob error %v", err)
 			return false
 		}
 		if m == true {
@@ -65,7 +93,7 @@ func containsGlob(haystack []string, needle string) bool {
 	return false
 }
 
-func TestItems(zipfile string, includeFiles []string) error {
+func TestItems(zipfile string, includeFiles []string, outPipe io.Writer, errPipe io.Writer) error {
 	r, err := zip.OpenReader(zipfile)
 	if err != nil {
 		return err
@@ -73,18 +101,18 @@ func TestItems(zipfile string, includeFiles []string) error {
 	defer r.Close()
 	for _, f := range r.File {
 		flags := f.FileHeader.Flags
-		if len(includeFiles) == 0 || containsGlob(includeFiles, f.Name) {
+		if len(includeFiles) == 0 || containsGlob(includeFiles, f.Name, errPipe) {
 			if flags&1 == 1 {
-				fmt.Printf("[Password Protected:] %s\n", f.Name)
+				fmt.Fprintf(outPipe, "[Password Protected:] %s\n", f.Name)
 			} else {
-				fmt.Printf("%s\n", f.Name)
+				fmt.Fprintf(outPipe, "%s\n", f.Name)
 			}
 		}
 	}
 	return nil
 }
 
-func UnzipItems(zipfile, destDir string, includeFiles []string) error {
+func UnzipItems(zipfile, destDir string, includeFiles []string, errPipe io.Writer) error {
 
 	r, err := zip.OpenReader(zipfile)
 	if err != nil {
@@ -115,7 +143,7 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 		finf := f.FileHeader.FileInfo()
 		flags := f.FileHeader.Flags
 		if flags&1 == 1 {
-			fmt.Fprintf(os.Stderr, "WARN: Skipping password protected file (flags %v, '%s')\n", flags, f.Name)
+			fmt.Fprintf(errPipe, "WARN: Skipping password protected file (flags %v, '%s')\n", flags, f.Name)
 		} else {
 			rc, err := f.Open()
 			if err != nil {
@@ -176,4 +204,27 @@ func UnzipItems(zipfile, destDir string, includeFiles []string) error {
 		}
 	}
 	return nil
+}
+// Factory for *SomeUnzip
+func NewUnzip() *SomeUnzip {
+	return new(SomeUnzip)
+}
+
+// Fluent factory for *SomeUnzip
+func Unzip(zipname string, files ...string) *SomeUnzip {
+	unzip := NewUnzip()
+	unzip.zipname = zipname
+	unzip.files = files
+	return unzip
+}
+
+// CLI invocation for *SomeUnzip
+func UnzipCli(call []string) error {
+	unzip := NewUnzip()
+	pipes := someutils.StdPipes()
+	err := unzip.ParseFlags(call, pipes.Err())
+	if err != nil {
+		return err
+	}
+	return unzip.Exec(pipes)
 }

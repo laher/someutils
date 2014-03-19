@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	"github.com/laher/someutils/some"
 	"os"
 )
 
 func main() {
-	err := someutils.Gunzip(os.Args)
+	err := some.GunzipCli(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+
 }

@@ -1,6 +1,8 @@
-package someutils
+package some
 
 import (
+	"fmt"
+	"github.com/laher/someutils"
 	"archive/zip"
 	"errors"
 	"github.com/laher/uggo"
@@ -9,26 +11,39 @@ import (
 	"path/filepath"
 )
 
-type ArchiveItem struct {
-	//if FileSystemPath is empty, use Data instead
-	FileSystemPath string
-	ArchivePath    string
-	Data           []byte
-}
-
 func init() {
-	Register(Util{
-		"zip",
-		Zip})
+	someutils.RegisterSome(func() someutils.SomeUtil { return NewZip() })
 }
 
-func Zip(call []string) error {
-	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", VERSION)
+// SomeZip represents and performs a `zip` invocation
+type SomeZip struct {
+	// TODO: add members here
+
+	zipFilename string
+	items []string
+}
+
+// Name() returns the name of the util
+func (z *SomeZip) Name() string {
+	return "zip"
+}
+
+// TODO: add validation here
+
+// ParseFlags parses flags from a commandline []string
+func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
+	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", someutils.VERSION)
+	flagSet.SetOutput(errWriter)
+
+	// TODO add flags here
+	
 	err := flagSet.Parse(call[1:])
 	if err != nil {
+		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
+
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
@@ -37,11 +52,21 @@ func Zip(call []string) error {
 		flagSet.Usage()
 		return errors.New("Not enough args given")
 	}
-	err = ZipItems(args[0], args[1:])
+	z.zipFilename = args[0]
+	z.items = args[1:]
+	// TODO: validate and process flagSet.Args()
+	return nil
+}
+
+// Exec actually performs the zip
+func (z *SomeZip) Exec(pipes someutils.Pipes) error {
+	//TODO do something here!
+	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {
 		return err
 	}
 	return nil
+
 }
 
 func ZipItems(zipFilename string, itemsToArchive []string) error {
@@ -70,7 +95,7 @@ func ZipItems(zipFilename string, itemsToArchive []string) error {
 	//resources
 	for _, itemS := range itemsToArchive {
 		//todo: relative/full path checking
-		item := ArchiveItem{itemS, itemS, nil}
+		item := someutils.ArchiveItem{itemS, itemS, nil}
 		err = addFileToZIP(zw, item)
 		if err != nil {
 			return err
@@ -81,7 +106,7 @@ func ZipItems(zipFilename string, itemsToArchive []string) error {
 	return err
 }
 
-func addFileToZIP(zw *zip.Writer, item ArchiveItem) error {
+func addFileToZIP(zw *zip.Writer, item someutils.ArchiveItem) error {
 	//fmt.Printf("Adding %s\n", item.FileSystemPath)
 	binfo, err := os.Stat(item.FileSystemPath)
 	if err != nil {
@@ -104,7 +129,7 @@ func addFileToZIP(zw *zip.Writer, item ArchiveItem) error {
 		}
 		fis, err := file.Readdir(0)
 		for _, fi := range fis {
-			err = addFileToZIP(zw, ArchiveItem{filepath.Join(item.FileSystemPath, fi.Name()), filepath.Join(item.ArchivePath, fi.Name()), nil})
+			err = addFileToZIP(zw, someutils.ArchiveItem{filepath.Join(item.FileSystemPath, fi.Name()), filepath.Join(item.ArchivePath, fi.Name()), nil})
 			if err != nil {
 				return err
 			}
@@ -131,4 +156,27 @@ func addFileToZIP(zw *zip.Writer, item ArchiveItem) error {
 		}
 	}
 	return err
+}
+// Factory for *SomeZip
+func NewZip() *SomeZip {
+	return new(SomeZip)
+}
+
+// Fluent factory for *SomeZip
+func Zip(args ...string) *SomeZip {
+	z := NewZip()
+	z.zipFilename = args[0]
+	z.items = args[1:]
+	return z
+}
+
+// CLI invocation for *SomeZip
+func ZipCli(call []string) error {
+	z := NewZip()
+	pipes := someutils.StdPipes()
+	err := z.ParseFlags(call, pipes.Err())
+	if err != nil {
+		return err
+	}
+	return z.Exec(pipes)
 }

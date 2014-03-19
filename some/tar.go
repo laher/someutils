@@ -1,6 +1,7 @@
-package someutils
+package some
 
 import (
+	"github.com/laher/someutils"
 	"archive/tar"
 	"errors"
 	"fmt"
@@ -8,9 +9,15 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
 )
 
-type TarOptions struct {
+func init() {
+	someutils.RegisterSome(func() someutils.SomeUtil { return NewTar() })
+}
+
+// SomeTar represents and performs a `tar` invocation
+type SomeTar struct {
 	IsCreate  bool
 	IsList    bool
 	IsExtract bool
@@ -18,12 +25,47 @@ type TarOptions struct {
 	//IsCatenate bool
 	IsVerbose       bool
 	ArchiveFilename string
+
+	args []string
 }
 
-func init() {
-	Register(Util{
-		"tar",
-		Tar})
+// Name() returns the name of the util
+func (tar *SomeTar) Name() string {
+	return "tar"
+}
+
+// TODO: add validation here
+
+// ParseFlags parses flags from a commandline []string
+func (t *SomeTar) ParseFlags(call []string, errWriter io.Writer) error {
+	flagSet := uggo.NewFlagSetDefault("tar", "[option...] [FILE...]", someutils.VERSION)
+	flagSet.SetOutput(errWriter)
+	flagSet.AliasedBoolVar(&t.IsCreate, []string{"c", "create"}, false, "create a new archive")
+	flagSet.AliasedBoolVar(&t.IsAppend, []string{"r", "append"}, false, "append files to the end of an archive")
+	flagSet.AliasedBoolVar(&t.IsList, []string{"t", "list"}, false, "list the contents of an archive")
+	flagSet.AliasedBoolVar(&t.IsExtract, []string{"x", "extract", "get"}, false, "extract files from an archive")
+	flagSet.AliasedBoolVar(&t.IsVerbose, []string{"v", "verbose"}, false, "verbosely list files processed")
+	flagSet.AliasedStringVar(&t.ArchiveFilename, []string{"f", "file"}, "", "use given archive file or device")
+
+	// TODO add flags here
+	
+	err := flagSet.Parse(call[1:])
+	if err != nil {
+		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		flagSet.Usage()
+		return err
+	}
+
+	if flagSet.ProcessHelpOrVersion() {
+		return nil
+	}
+	if countTrue(t.IsCreate, t.IsAppend, t.IsList, t.IsExtract) != 1 {
+		return errors.New("You must use *one* of -c, -t, -x, -r (create, list, extract or append), plus -f")
+	}
+	t.args = flagSet.Args()
+
+
+	return nil
 }
 
 func countTrue(args ...bool) int {
@@ -36,69 +78,39 @@ func countTrue(args ...bool) int {
 	return count
 }
 
-func Tar(call []string) error {
-	options := TarOptions{}
-	flagSet := uggo.NewFlagSetDefault("tar", "[OPTION...] [FILE]...", VERSION)
-	flagSet.AliasedBoolVar(&options.IsCreate, []string{"c", "create"}, false, "create a new archive")
-	flagSet.AliasedBoolVar(&options.IsAppend, []string{"r", "append"}, false, "append files to the end of an archive")
-	flagSet.AliasedBoolVar(&options.IsList, []string{"t", "list"}, false, "list the contents of an archive")
-	flagSet.AliasedBoolVar(&options.IsExtract, []string{"x", "extract", "get"}, false, "extract files from an archive")
-	flagSet.AliasedBoolVar(&options.IsVerbose, []string{"v", "verbose"}, false, "verbosely list files processed")
-	flagSet.AliasedStringVar(&options.ArchiveFilename, []string{"f", "file"}, "", "use given archive file or device")
+
+// Exec actually performs the tar
+func (t *SomeTar) Exec(pipes someutils.Pipes) error {
+	//overrideable??
 	destDir := "."
-
-	err := flagSet.Parse(call[1:])
-	if err != nil {
-		return err
-	}
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
-
-	//if !options.IsCreate && !options.IsList && !options.IsExtract {
-	if countTrue(options.IsCreate, options.IsAppend, options.IsList, options.IsExtract) != 1 {
-		return errors.New("You must use *one* of -c, -t, -x, -r (create, list, extract or append), plus -f")
-	}
-	args := flagSet.Args()
-
-	if options.IsCreate {
+	if t.IsCreate {
 		//OK
-		//fmt.Printf("Create %s\n", options.ArchiveFilename)
-		err = TarItems(options.ArchiveFilename, args, options)
-		if err != nil {
-			return err
-		}
-	} else if options.IsAppend {
+		//fmt.Printf("Create %s\n", t.ArchiveFilename)
+		err := TarItems(t.ArchiveFilename, t.args, t, pipes.Out())
+		return err
+	} else if t.IsAppend {
 		//hmm is this OK with STDIN??
-		if options.ArchiveFilename == "" {
+		if t.ArchiveFilename == "" {
 			return errors.New("Filename (-f) must be provided in Append mode")
 		}
 		//OK
-		//fmt.Printf("Append %s\n", options.ArchiveFilename)
-		err = TarItems(options.ArchiveFilename, args, options)
-		if err != nil {
-			return err
-		}
-	} else if options.IsList {
-		//fmt.Println("List", options.ArchiveFilename)
-		err = TestTarItems(options.ArchiveFilename, args)
-		if err != nil {
-			return err
-		}
-
-	} else if options.IsExtract {
-		//fmt.Println("Extract", options.ArchiveFilename)
-		err = UntarItems(options.ArchiveFilename, destDir, args, options)
-		if err != nil {
-			return err
-		}
+		//fmt.Printf("Append %s\n", t.ArchiveFilename)
+		err := TarItems(t.ArchiveFilename, t.args, t, pipes.Out())
+		return err
+	} else if t.IsList {
+		//fmt.Println("List", t.ArchiveFilename)
+		err := TestTarItems(t.ArchiveFilename, t.args, pipes.In(), pipes.Out())
+		return err
+	} else if t.IsExtract {
+		//fmt.Println("Extract", t.ArchiveFilename)
+		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, pipes.In(), pipes.Out())
+		return err
 	} else {
 		return errors.New("You must use ONLY one of -c, -t or -x (create, list or extract), plus -f")
 	}
-	return nil
 }
 
-func TarItems(tarfile string, includeFiles []string, options TarOptions) error {
+func TarItems(tarfile string, includeFiles []string, t *SomeTar, outPipe io.Writer) error {
 	var mode os.FileMode
 	var zf *os.File
 	var out io.Writer
@@ -112,13 +124,13 @@ func TarItems(tarfile string, includeFiles []string, options TarOptions) error {
 			}
 		}
 		flags := os.O_RDWR
-		if options.IsAppend {
+		if t.IsAppend {
 			//flags = flags | os.O_APPEND
 		} else {
 			flags = flags | os.O_TRUNC | os.O_CREATE
 		}
 		zf, err = os.OpenFile(tarfile, flags, mode)
-		if options.IsAppend {
+		if t.IsAppend {
 			//println("append")
 			//go to start of file footer
 			zf.Seek(-1024, os.SEEK_END)
@@ -129,7 +141,7 @@ func TarItems(tarfile string, includeFiles []string, options TarOptions) error {
 		defer zf.Close()
 		out = zf
 	} else {
-		out = os.Stdout
+		out = outPipe
 	}
 
 	zw := tar.NewWriter(out)
@@ -137,8 +149,8 @@ func TarItems(tarfile string, includeFiles []string, options TarOptions) error {
 
 	for _, itemS := range includeFiles {
 		//todo: relative/full path checking
-		item := ArchiveItem{itemS, itemS, nil}
-		err = addFileToTar(zw, item, options.IsVerbose)
+		item := someutils.ArchiveItem{itemS, itemS, nil}
+		err = addFileToTar(zw, item, t.IsVerbose, outPipe)
 		if err != nil {
 			return err
 		}
@@ -154,7 +166,7 @@ func TarItems(tarfile string, includeFiles []string, options TarOptions) error {
 	return err
 }
 
-func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptions) error {
+func UntarItems(tarfile, destDir string, includeFiles []string, t *SomeTar, inPipe io.Reader, outPipe io.Writer) error {
 	var in io.Reader
 	if tarfile != "" {
 		r, err := os.Open(tarfile)
@@ -164,7 +176,7 @@ func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptio
 		defer r.Close()
 		in = r
 	} else {
-		in = os.Stdin
+		in = inPipe
 	}
 	dinf, err := os.Stat(destDir)
 	if err != nil {
@@ -198,8 +210,8 @@ func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptio
 		destFileName := filepath.Join(destDir, hdr.Name)
 		finf := hdr.FileInfo()
 		if finf.IsDir() {
-			if options.IsVerbose {
-				fmt.Printf("Making dir %s:\n", hdr.Name)
+			if t.IsVerbose {
+				fmt.Fprintf(outPipe, "Making dir %s:\n", hdr.Name)
 			}
 			//mkdir ...
 			fdinf, err := os.Stat(destFileName)
@@ -220,8 +232,8 @@ func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptio
 			}
 
 		} else {
-			if options.IsVerbose {
-				fmt.Printf("%s\n", hdr.Name)
+			if t.IsVerbose {
+				fmt.Fprintf(outPipe, "%s\n", hdr.Name)
 			}
 			//fmt.Printf("Contents of %s to %s\n", hdr.Name, destFileName)
 			flags := os.O_CREATE | os.O_TRUNC | os.O_WRONLY
@@ -244,7 +256,7 @@ func UntarItems(tarfile, destDir string, includeFiles []string, options TarOptio
 
 }
 
-func TestTarItems(tarfile string, includeFiles []string) error {
+func TestTarItems(tarfile string, includeFiles []string, inPipe io.Reader, outPipe io.Writer) error {
 	var in io.Reader
 	if tarfile != "" {
 		r, err := os.Open(tarfile)
@@ -254,7 +266,7 @@ func TestTarItems(tarfile string, includeFiles []string) error {
 		defer r.Close()
 		in = r
 	} else {
-		in = os.Stdin
+		in = inPipe
 	}
 	tr := tar.NewReader(in)
 	// Iterate through the files in the archive.
@@ -270,14 +282,14 @@ func TestTarItems(tarfile string, includeFiles []string) error {
 		modeString := getModeString(hdr.FileInfo())
 		modTimeString := getModTimeString(hdr.FileInfo())
 		sizeString := getSizeString(hdr.FileInfo().Size(), false)
-		fmt.Printf("%s %s %s %s\n", modeString, sizeString, modTimeString, hdr.Name)
+		fmt.Fprintf(outPipe, "%s %s %s %s\n", modeString, sizeString, modTimeString, hdr.Name)
 	}
 	return nil
 }
 
-func addFileToTar(zw *tar.Writer, item ArchiveItem, isVerbose bool) error {
+func addFileToTar(zw *tar.Writer, item someutils.ArchiveItem, isVerbose bool, outPipe io.Writer) error {
 	if isVerbose {
-		fmt.Printf("Adding %s\n", item.FileSystemPath)
+		fmt.Fprintf(outPipe, "Adding %s\n", item.FileSystemPath)
 	}
 	binfo, err := os.Stat(item.FileSystemPath)
 	if err != nil {
@@ -299,7 +311,7 @@ func addFileToTar(zw *tar.Writer, item ArchiveItem, isVerbose bool) error {
 		}
 		fis, err := file.Readdir(0)
 		for _, fi := range fis {
-			err = addFileToTar(zw, ArchiveItem{filepath.Join(item.FileSystemPath, fi.Name()), filepath.Join(item.ArchivePath, fi.Name()), nil}, isVerbose)
+			err = addFileToTar(zw, someutils.ArchiveItem{filepath.Join(item.FileSystemPath, fi.Name()), filepath.Join(item.ArchivePath, fi.Name()), nil}, isVerbose, outPipe)
 			if err != nil {
 				return err
 			}
@@ -333,4 +345,27 @@ func addFileToTar(zw *tar.Writer, item ArchiveItem, isVerbose bool) error {
 		}
 	}
 	return err
+}
+// Factory for *SomeTar
+func NewTar() *SomeTar {
+	return new(SomeTar)
+}
+
+// Fluent factory for *SomeTar
+func Tar(archiveFilename string, args ...string) *SomeTar {
+	tar := NewTar()
+	tar.ArchiveFilename = archiveFilename
+	tar.args = args
+	return tar
+}
+
+// CLI invocation for *SomeTar
+func TarCli(call []string) error {
+	tar := NewTar()
+	pipes := someutils.StdPipes()
+	err := tar.ParseFlags(call, pipes.Err())
+	if err != nil {
+		return err
+	}
+	return tar.Exec(pipes)
 }

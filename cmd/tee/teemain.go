@@ -2,14 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	"github.com/laher/someutils/some"
 	"os"
 )
 
 func main() {
-	err := someutils.Tee(os.Args)
+	err := some.TeeCli(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Returned error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
+
 }
