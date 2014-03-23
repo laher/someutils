@@ -89,6 +89,11 @@ func CollectErrors(e chan error, count int) []error {
 	return errs
 }
 
+func PipelineSync(pipes Pipes, execables ...Execable) []error {
+	e := Pipeline(pipes, execables...)
+	return CollectErrors(e, len(execables))
+}
+
 type Execable interface {
 	Exec(Pipes) error
 }
