@@ -1,10 +1,10 @@
 package some
 
 import (
-	"fmt"
-	"github.com/laher/someutils"
 	"compress/gzip"
 	"errors"
+	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -35,7 +35,7 @@ func (gz *SomeGzip) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	flagSet.AliasedBoolVar(&gz.IsKeep, []string{"k", "keep"}, false, "keep gzip file")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())

@@ -15,7 +15,7 @@ func init() {
 
 // SomeHead represents and performs a `head` invocation
 type SomeHead struct {
-	lines int
+	lines     int
 	Filenames []string
 }
 
@@ -32,7 +32,7 @@ func (head *SomeHead) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	flagSet.AliasedIntVar(&head.lines, []string{"n", "lines"}, 10, "number of lines to print")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -51,7 +51,7 @@ func (head *SomeHead) ParseFlags(call []string, errWriter io.Writer) error {
 // Exec actually performs the head
 func (head *SomeHead) Exec(pipes someutils.Pipes) error {
 	//TODO do something here!
-	if len(head.Filenames)>0 {
+	if len(head.Filenames) > 0 {
 		for _, fileName := range head.Filenames {
 			file, err := os.Open(fileName)
 			if err != nil {

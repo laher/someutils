@@ -1,10 +1,10 @@
 package some
 
 import (
-	"github.com/laher/someutils"
 	"archive/zip"
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -19,10 +19,10 @@ func init() {
 type SomeUnzip struct {
 	// TODO: add members here
 	destDir string
-	isTest bool
+	isTest  bool
 
 	zipname string
-	files []string
+	files   []string
 }
 
 // Name() returns the name of the util
@@ -42,7 +42,7 @@ func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.BoolVar(&unzip.isTest, "t", test, "test archive data")
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -205,6 +205,7 @@ func UnzipItems(zipfile, destDir string, includeFiles []string, errPipe io.Write
 	}
 	return nil
 }
+
 // Factory for *SomeUnzip
 func NewUnzip() *SomeUnzip {
 	return new(SomeUnzip)

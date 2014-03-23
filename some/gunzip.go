@@ -1,10 +1,10 @@
 package some
 
 import (
-	"fmt"
-	"github.com/laher/someutils"
 	"compress/gzip"
 	"errors"
+	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -16,8 +16,8 @@ func init() {
 
 // SomeGunzip represents and performs a `gunzip` invocation
 type SomeGunzip struct {
-	IsTest bool
-	IsKeep bool
+	IsTest    bool
+	IsKeep    bool
 	Filenames []string
 }
 
@@ -34,7 +34,7 @@ func (gunzip *SomeGunzip) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 	flagSet.AliasedBoolVar(&gunzip.IsTest, []string{"t", "test"}, false, "test archive data")
 	flagSet.AliasedBoolVar(&gunzip.IsKeep, []string{"k", "keep"}, false, "keep gzip file")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -70,7 +70,6 @@ func (gunzip *SomeGunzip) Exec(pipes someutils.Pipes) error {
 	return nil
 
 }
-
 
 func TestGzipItems(items []string) error {
 	for _, item := range items {
@@ -144,8 +143,6 @@ func GunzipItem(item io.Reader, outPipe io.Writer) error {
 	err = r.Close()
 	return err
 }
-
-
 
 // Factory for *SomeGunzip
 func NewGunzip() *SomeGunzip {

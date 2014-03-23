@@ -1,14 +1,13 @@
 package someutils
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
-	"bytes"
 )
 
 type ExampleUtil struct {
-
 }
 
 func (ex *ExampleUtil) Exec(pipes Pipes) error {
@@ -17,7 +16,6 @@ func (ex *ExampleUtil) Exec(pipes Pipes) error {
 		return err
 	})
 }
-
 
 func ExamplePipeline() {
 	var errout bytes.Buffer

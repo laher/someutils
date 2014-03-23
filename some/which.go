@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
 )
 
 func init() {
@@ -18,7 +17,7 @@ func init() {
 
 // SomeWhich represents and performs a `which` invocation
 type SomeWhich struct {
-	all bool
+	all  bool
 	args []string
 }
 
@@ -35,7 +34,7 @@ func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	flagSet.BoolVar(&which.all, "a", false, "Print all matching executables in PATH, not just the first.")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -46,7 +45,7 @@ func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	which.args = flagSet.Args()
 	return nil
 }
@@ -98,6 +97,7 @@ func checkPathParts(arg string, pathParts []string, which *SomeWhich, outPipe io
 		}
 	}
 }
+
 // Factory for *SomeWhich
 func NewWhich() *SomeWhich {
 	return new(SomeWhich)

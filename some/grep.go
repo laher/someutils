@@ -4,13 +4,13 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"github.com/laher/someutils"
 )
 
 func init() {
@@ -32,7 +32,7 @@ type SomeGrep struct {
 	LinesAround       int
 
 	pattern string
-	globs []string
+	globs   []string
 }
 
 // Name() returns the name of the util
@@ -55,8 +55,6 @@ func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
 	// disable for now
 	//	flagSet.AliasedBoolVar(&grep.IsRecurse, []string{"r", "recurse"}, false, "recurse into subdirectories")
 
-
-	
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -67,7 +65,7 @@ func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	args := flagSet.Args()
 	if len(args) < 1 {
 		flagSet.Usage()
@@ -80,7 +78,6 @@ func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
 	} else {
 		grep.globs = []string{}
 	}
-
 
 	return nil
 }
@@ -186,7 +183,6 @@ func compile(pattern string, grep *SomeGrep) (*regexp.Regexp, error) {
 		return regexp.CompilePOSIX(pattern)
 	}
 }
-
 
 // Factory for *SomeGrep
 func NewGrep() *SomeGrep {

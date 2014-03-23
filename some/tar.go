@@ -1,15 +1,14 @@
 package some
 
 import (
-	"github.com/laher/someutils"
 	"archive/tar"
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
-
 )
 
 func init() {
@@ -48,7 +47,7 @@ func (t *SomeTar) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.AliasedStringVar(&t.ArchiveFilename, []string{"f", "file"}, "", "use given archive file or device")
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -64,7 +63,6 @@ func (t *SomeTar) ParseFlags(call []string, errWriter io.Writer) error {
 	}
 	t.args = flagSet.Args()
 
-
 	return nil
 }
 
@@ -77,7 +75,6 @@ func countTrue(args ...bool) int {
 	}
 	return count
 }
-
 
 // Exec actually performs the tar
 func (t *SomeTar) Exec(pipes someutils.Pipes) error {
@@ -346,6 +343,7 @@ func addFileToTar(zw *tar.Writer, item someutils.ArchiveItem, isVerbose bool, ou
 	}
 	return err
 }
+
 // Factory for *SomeTar
 func NewTar() *SomeTar {
 	return new(SomeTar)

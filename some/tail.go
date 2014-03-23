@@ -1,9 +1,9 @@
 package some
 
 import (
-	"github.com/laher/someutils"
 	"bufio"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -20,7 +20,7 @@ type SomeTail struct {
 	FollowByDescriptor bool
 	FollowByName       bool
 	SleepInterval      float64
-	Filenames []string
+	Filenames          []string
 }
 
 // Name() returns the name of the util
@@ -168,6 +168,7 @@ func tailReader(file io.Reader, start int64, tail *SomeTail, out io.Writer) (int
 	}
 	return end, nil
 }
+
 // Factory for *SomeTail
 func NewTail() *SomeTail {
 	return new(SomeTail)

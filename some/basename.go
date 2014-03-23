@@ -3,9 +3,9 @@ package some
 import (
 	"errors"
 	"fmt"
-	"io"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
+	"io"
 	"path"
 	"strings"
 )
@@ -16,7 +16,7 @@ func init() {
 
 // SomeBasename represents and performs a `basename` invocation
 type SomeBasename struct {
-	InputPath string
+	InputPath  string
 	RelativeTo string
 }
 
@@ -24,7 +24,6 @@ type SomeBasename struct {
 func (basename *SomeBasename) Name() string {
 	return "basename"
 }
-
 
 // ParseFlags parses flags from a commandline []string
 func (basename *SomeBasename) ParseFlags(call []string, errWriter io.Writer) error {

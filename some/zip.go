@@ -1,10 +1,10 @@
 package some
 
 import (
-	"fmt"
-	"github.com/laher/someutils"
 	"archive/zip"
 	"errors"
+	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -20,7 +20,7 @@ type SomeZip struct {
 	// TODO: add members here
 
 	zipFilename string
-	items []string
+	items       []string
 }
 
 // Name() returns the name of the util
@@ -36,7 +36,7 @@ func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -157,6 +157,7 @@ func addFileToZIP(zw *zip.Writer, item someutils.ArchiveItem) error {
 	}
 	return err
 }
+
 // Factory for *SomeZip
 func NewZip() *SomeZip {
 	return new(SomeZip)

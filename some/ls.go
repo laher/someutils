@@ -1,10 +1,10 @@
 package some
 
 import (
-	"github.com/laher/someutils"
 	"bufio"
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"io/ioutil"
@@ -30,6 +30,7 @@ type SomeLs struct {
 
 	globs []string
 }
+
 var accessSymbols = "xwr"
 
 // Name() returns the name of the util
@@ -50,7 +51,7 @@ func (ls *SomeLs) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.AliasedBoolVar(&ls.AllFiles, []string{"a", "all"}, false, "Show all files (including dotfiles)")
 	flagSet.BoolVar(&ls.OnePerLine, "1", false, "One entry per line")
 	flagSet.AliasedBoolVar(&ls.Stdin, []string{"z", "stdin"}, false, "Read from stdin")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -61,8 +62,6 @@ func (ls *SomeLs) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
-	
 
 	// TODO: validate and process flagSet.Args()
 	return nil
@@ -133,9 +132,6 @@ func (ls *SomeLs) Exec(pipes someutils.Pipes) error {
 	return nil
 
 }
-
-
-
 
 // Factory for *SomeLs
 func NewLs() *SomeLs {

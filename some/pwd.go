@@ -30,7 +30,7 @@ func (pwd *SomePwd) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -41,7 +41,7 @@ func (pwd *SomePwd) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	// TODO: validate and process flagSet.Args()
 	return nil
 }

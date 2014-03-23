@@ -3,10 +3,10 @@ package some
 import (
 	"bufio"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
-	"github.com/laher/someutils"
 )
 
 func init() {
@@ -18,7 +18,7 @@ type SomeWc struct {
 	IsBytes bool
 	IsWords bool
 	IsLines bool
-	args []string
+	args    []string
 }
 
 // Name() returns the name of the util

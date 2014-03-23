@@ -1,14 +1,13 @@
 package some
 
 import (
+	"errors"
 	"fmt"
 	"github.com/laher/someutils"
-	"errors"
 	"github.com/laher/uggo"
 	"io"
 	"os"
 	"time"
-
 )
 
 func init() {
@@ -34,7 +33,7 @@ func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -45,7 +44,7 @@ func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	args := flagSet.Args()
 	if len(args) < 1 {
 		return errors.New("Not enough args given")
@@ -85,6 +84,7 @@ func touchFile(filename string) error {
 	}
 	return nil
 }
+
 // Factory for *SomeTouch
 func NewTouch() *SomeTouch {
 	return new(SomeTouch)

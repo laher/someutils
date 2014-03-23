@@ -14,8 +14,8 @@ type Pipes interface {
 }
 
 type ConcretePipes struct {
-	in  io.Reader
-	out io.Writer
+	in     io.Reader
+	out    io.Writer
 	errout io.Writer
 }
 
@@ -72,7 +72,7 @@ func Pipeline(pipes Pipes, execables ...Execable) chan error {
 		} else {
 			r, w = io.Pipe()
 			out = w
-			closers = append (closers, w)
+			closers = append(closers, w)
 		}
 		go runAsync(execable, &ConcretePipes{in, out, pipes.Err()}, closers, e)
 		previousReader = &r
@@ -98,7 +98,6 @@ type Execable interface {
 	Exec(Pipes) error
 }
 
-
 type LineProcessorFunc func(Pipes, []byte) error
 
 func LineProcessor(pipes Pipes, fu LineProcessorFunc) error {
@@ -118,4 +117,3 @@ func LineProcessor(pipes Pipes, fu LineProcessorFunc) error {
 	}
 	return nil
 }
-

@@ -1,9 +1,9 @@
 package some
 
 import (
-	"github.com/laher/someutils"
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
@@ -17,7 +17,7 @@ func init() {
 // SomeMv represents and performs a `mv` invocation
 type SomeMv struct {
 	srcGlobs []string
-	dest string
+	dest     string
 }
 
 // Name() returns the name of the util
@@ -25,14 +25,13 @@ func (mv *SomeMv) Name() string {
 	return "mv"
 }
 
-
 // ParseFlags parses flags from a commandline []string
 func (mv *SomeMv) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -80,7 +79,6 @@ func (mv *SomeMv) Exec(pipes someutils.Pipes) error {
 	return nil
 
 }
-
 
 func moveFile(src, dest string) error {
 	//fmt.Printf("%s -> %s\n", src, dest)

@@ -16,7 +16,7 @@ func init() {
 
 // SomeSleep represents and performs a `sleep` invocation
 type SomeSleep struct {
-	unit string
+	unit   string
 	amount int
 }
 
@@ -24,7 +24,6 @@ type SomeSleep struct {
 func (sleep *SomeSleep) Name() string {
 	return "sleep"
 }
-
 
 // ParseFlags parses flags from a commandline []string
 func (sleep *SomeSleep) ParseFlags(call []string, errWriter io.Writer) error {

@@ -15,8 +15,8 @@ func init() {
 // SomeTee represents and performs a `tee` invocation
 type SomeTee struct {
 	isAppend bool
-	flag int
-	args []string
+	flag     int
+	args     []string
 }
 
 // Name() returns the name of the util
@@ -33,7 +33,7 @@ func (tee *SomeTee) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.AliasedBoolVar(&tee.isAppend, []string{"a", "append"}, false, "Append instead of overwrite")
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())

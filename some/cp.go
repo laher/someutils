@@ -3,11 +3,11 @@ package some
 import (
 	"errors"
 	"fmt"
+	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
-	"github.com/laher/someutils"
 )
 
 func init() {
@@ -18,8 +18,8 @@ func init() {
 type SomeCp struct {
 	// TODO: add members here
 	IsRecursive bool
-	SrcGlobs []string
-	Dest string
+	SrcGlobs    []string
+	Dest        string
 }
 
 // Name() returns the name of the util

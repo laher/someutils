@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-
 )
 
 func init() {
@@ -18,7 +17,7 @@ func init() {
 // SomeRm represents and performs a `rm` invocation
 type SomeRm struct {
 	IsRecursive bool
-	fileGlobs []string
+	fileGlobs   []string
 }
 
 // Name() returns the name of the util
@@ -32,7 +31,7 @@ func (rm *SomeRm) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet.SetOutput(errWriter)
 
 	flagSet.BoolVar(&rm.IsRecursive, "r", false, "Recurse into directories")
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
@@ -43,7 +42,7 @@ func (rm *SomeRm) ParseFlags(call []string, errWriter io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	rm.fileGlobs = flagSet.Args()
 	return nil
 }
