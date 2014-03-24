@@ -59,7 +59,7 @@ func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the zip
-func (z *SomeZip) Exec(pipes someutils.Pipes) error {
+func (z *SomeZip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {
@@ -174,10 +174,10 @@ func Zip(args ...string) *SomeZip {
 // CLI invocation for *SomeZip
 func ZipCli(call []string) error {
 	z := NewZip()
-	pipes := someutils.StdPipes()
-	err := z.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := z.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return z.Exec(pipes)
+	return z.Exec(inPipe, outPipe, errPipe)
 }

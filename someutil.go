@@ -13,15 +13,15 @@ type SomeFunc func() SomeUtil
 
 func RegisterSome(somefunc SomeFunc) {
 
-	pipes := StdPipes()
+	inPipe, outPipe, errPipe := StdPipes()
 
 	Register(Util{somefunc().Name(), func(call []string) error {
 		someutil := somefunc()
-		err := someutil.ParseFlags(call, pipes.Err())
+		err := someutil.ParseFlags(call, errPipe)
 		if err != nil {
 			return err
 		}
-		err = someutil.Exec(pipes)
+		err = someutil.Exec(inPipe, outPipe, errPipe)
 		return err
 	}})
 

@@ -30,15 +30,15 @@ func (cp *SomeCp) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (cp *SomeCp) ParseFlags(call []string, errWriter io.Writer) error {
+func (cp *SomeCp) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", someutils.VERSION)
 	flagSet.AliasedBoolVar(&cp.IsRecursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -60,7 +60,7 @@ func (cp *SomeCp) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the cp
-func (cp *SomeCp) Exec(pipes someutils.Pipes) error {
+func (cp *SomeCp) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	for _, srcGlob := range cp.SrcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
@@ -194,10 +194,10 @@ func Cp(args ...string) *SomeCp {
 // CLI invocation for *SomeCp
 func CpCli(call []string) error {
 	cp := NewCp()
-	pipes := someutils.StdPipes()
-	err := cp.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := cp.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return cp.Exec(pipes)
+	return cp.Exec(inPipe, outPipe, errPipe)
 }

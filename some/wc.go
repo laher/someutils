@@ -54,7 +54,7 @@ func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the wc
-func (wc *SomeWc) Exec(pipes someutils.Pipes) error {
+func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if len(wc.args) > 0 {
 		//treat no args as all args
 		if !wc.IsWords && !wc.IsLines && !wc.IsBytes {
@@ -81,13 +81,13 @@ func (wc *SomeWc) Exec(pipes someutils.Pipes) error {
 				return err
 			}
 			if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(pipes.Out(), "%d %s\n", words, fileName)
+				fmt.Fprintf(outPipe, "%d %s\n", words, fileName)
 			} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(pipes.Out(), "%d %s\n", lines, fileName)
+				fmt.Fprintf(outPipe, "%d %s\n", lines, fileName)
 			} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-				fmt.Fprintf(pipes.Out(), "%d %s\n", bytes, fileName)
+				fmt.Fprintf(outPipe, "%d %s\n", bytes, fileName)
 			} else {
-				fmt.Fprintf(pipes.Out(), "%d %d %d %s\n", lines, words, bytes, fileName)
+				fmt.Fprintf(outPipe, "%d %d %d %s\n", lines, words, bytes, fileName)
 			}
 		}
 	} else {
@@ -98,18 +98,18 @@ func (wc *SomeWc) Exec(pipes someutils.Pipes) error {
 		bytes := int64(0)
 		words := int64(0)
 		lines := int64(0)
-		err := countWords(pipes.In(), wc, &bytes, &words, &lines)
+		err := countWords(inPipe, wc, &bytes, &words, &lines)
 		if err != nil {
 			return err
 		}
 		if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(pipes.Out(), "%d\n", words)
+			fmt.Fprintf(outPipe, "%d\n", words)
 		} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(pipes.Out(), "%d\n", lines)
+			fmt.Fprintf(outPipe, "%d\n", lines)
 		} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-			fmt.Fprintf(pipes.Out(), "%d\n", bytes)
+			fmt.Fprintf(outPipe, "%d\n", bytes)
 		} else {
-			fmt.Fprintf(pipes.Out(), "%d %d %d\n", lines, words, bytes)
+			fmt.Fprintf(outPipe, "%d %d %d\n", lines, words, bytes)
 		}
 	}
 	return nil
@@ -163,10 +163,10 @@ func Wc(args ...string) *SomeWc {
 // CLI invocation for *SomeWc
 func WcCli(call []string) error {
 	wc := NewWc()
-	pipes := someutils.StdPipes()
-	err := wc.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := wc.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return wc.Exec(pipes)
+	return wc.Exec(inPipe, outPipe, errPipe)
 }

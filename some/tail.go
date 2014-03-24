@@ -31,9 +31,9 @@ func (tail *SomeTail) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (tail *SomeTail) ParseFlags(call []string, errWriter io.Writer) error {
+func (tail *SomeTail) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("tail", "[options] [args...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	flagSet.AliasedIntVar(&tail.Lines, []string{"n", "lines"}, 10, "number of lines to print")
 	flagSet.AliasedFloat64Var(&tail.SleepInterval, []string{"s", "sleep"}, 1.0, "how long to sleep")
@@ -43,7 +43,7 @@ func (tail *SomeTail) ParseFlags(call []string, errWriter io.Writer) error {
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -57,7 +57,7 @@ func (tail *SomeTail) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the tail
-func (tail *SomeTail) Exec(pipes someutils.Pipes) error {
+func (tail *SomeTail) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if len(tail.Filenames) > 0 {
 		for _, fileName := range tail.Filenames {
 			finf, err := os.Stat(fileName)
@@ -77,7 +77,7 @@ func (tail *SomeTail) Exec(pipes someutils.Pipes) error {
 					return err
 				}
 			}
-			end, err := tailReader(file, seek, tail, pipes.Out())
+			end, err := tailReader(file, seek, tail, outPipe)
 			if err != nil {
 				file.Close()
 				return err
@@ -105,7 +105,7 @@ func (tail *SomeTail) Exec(pipes someutils.Pipes) error {
 						return err
 					}
 					if finf.Size() > end {
-						end, err = tailReader(file, end, tail, pipes.Out())
+						end, err = tailReader(file, end, tail, outPipe)
 						if err != nil {
 							file.Close()
 							return err
@@ -123,7 +123,7 @@ func (tail *SomeTail) Exec(pipes someutils.Pipes) error {
 		return nil
 	} else {
 		//stdin ..
-		_, err := tailReader(pipes.In(), 0, tail, pipes.Out())
+		_, err := tailReader(inPipe, 0, tail, outPipe)
 		return err
 	}
 }
@@ -184,10 +184,10 @@ func Tail(args ...string) *SomeTail {
 // CLI invocation for *SomeTail
 func TailCli(call []string) error {
 	tail := NewTail()
-	pipes := someutils.StdPipes()
-	err := tail.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := tail.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return tail.Exec(pipes)
+	return tail.Exec(inPipe, outPipe, errPipe)
 }

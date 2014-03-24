@@ -48,7 +48,7 @@ func (w *SomeWget) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the wget
-func (w *SomeWget) Exec(pipes someutils.Pipes) error {
+func (w *SomeWget) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 	return wget.Wget(w.args)
 }
@@ -68,10 +68,10 @@ func Wget(args ...string) *SomeWget {
 // CLI invocation for *SomeWget
 func WgetCli(call []string) error {
 	w := NewWget()
-	pipes := someutils.StdPipes()
-	err := w.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := w.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return w.Exec(pipes)
+	return w.Exec(inPipe, outPipe, errPipe)
 }

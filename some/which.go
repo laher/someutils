@@ -51,14 +51,14 @@ func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the which
-func (which *SomeWhich) Exec(pipes someutils.Pipes) error {
+func (which *SomeWhich) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	path := os.Getenv("PATH")
 	if runtime.GOOS == "windows" {
 		path = ".;" + path
 	}
 	pl := filepath.SplitList(path)
 	for _, arg := range which.args {
-		checkPathParts(arg, pl, which, pipes.Out())
+		checkPathParts(arg, pl, which, outPipe)
 	}
 	return nil
 
@@ -113,10 +113,10 @@ func Which(args ...string) *SomeWhich {
 // CLI invocation for *SomeWhich
 func WhichCli(call []string) error {
 	which := NewWhich()
-	pipes := someutils.StdPipes()
-	err := which.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := which.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return which.Exec(pipes)
+	return which.Exec(inPipe, outPipe, errPipe)
 }

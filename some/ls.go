@@ -41,9 +41,9 @@ func (ls *SomeLs) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (ls *SomeLs) ParseFlags(call []string, errWriter io.Writer) error {
+func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("ls", "[options] [dirs...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	flagSet.BoolVar(&ls.LongList, "l", false, "Long, detailed listing")
 	flagSet.AliasedBoolVar(&ls.Recursive, []string{"R", "recursive"}, false, "Recurse into directories")
@@ -54,7 +54,7 @@ func (ls *SomeLs) ParseFlags(call []string, errWriter io.Writer) error {
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -68,10 +68,10 @@ func (ls *SomeLs) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the ls
-func (ls *SomeLs) Exec(pipes someutils.Pipes) error {
+func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
-	out := tabwriter.NewWriter(pipes.Out(), 4, 4, 1, ' ', 0)
-	args, err := getDirList(ls.globs, ls, pipes)
+	out := tabwriter.NewWriter(outPipe, 4, 4, 1, ' ', 0)
+	args, err := getDirList(ls.globs, ls, inPipe, outPipe, errPipe)
 	if err != nil {
 		return err
 	}
@@ -83,7 +83,7 @@ func (ls *SomeLs) Exec(pipes someutils.Pipes) error {
 			strings.HasPrefix(arg, "..") || "." == arg {
 			argInfo, err := os.Stat(arg)
 			if err != nil {
-				fmt.Fprintln(pipes.Err(), "stat failed for ", arg)
+				fmt.Fprintln(errPipe, "stat failed for ", arg)
 				return err
 			}
 			if argInfo.IsDir() {
@@ -114,7 +114,7 @@ func (ls *SomeLs) Exec(pipes someutils.Pipes) error {
 					}
 				}
 
-				err := list(out, pipes.Err(), dir, "", ls, &counter)
+				err := list(out, errPipe, dir, "", ls, &counter)
 				if err != nil {
 					return err
 				}
@@ -123,7 +123,7 @@ func (ls *SomeLs) Exec(pipes someutils.Pipes) error {
 				}
 			} else {
 
-				listItem(argInfo, out, pipes.Err(), filepath.Dir(arg), "", ls, &counter)
+				listItem(argInfo, out, errPipe, filepath.Dir(arg), "", ls, &counter)
 			}
 			lastWasDir = argInfo.IsDir()
 		}
@@ -148,19 +148,19 @@ func Ls(args ...string) *SomeLs {
 // CLI invocation for *SomeLs
 func LsCli(call []string) error {
 	ls := NewLs()
-	pipes := someutils.StdPipes()
-	err := ls.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := ls.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return ls.Exec(pipes)
+	return ls.Exec(inPipe, outPipe, errPipe)
 }
 
-func getDirList(globs []string, ls *SomeLs, pipes someutils.Pipes) ([]string, error) {
+func getDirList(globs []string, ls *SomeLs, inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) ([]string, error) {
 	if len(globs) <= 0 {
 		if uggo.IsPipingStdin() {
 			//check STDIN
-			bio := bufio.NewReader(pipes.In())
+			bio := bufio.NewReader(inPipe)
 			//defer bio.Close()
 			line, hasMoreInLine, err := bio.ReadLine()
 			if err == nil {
@@ -199,19 +199,19 @@ func getDirList(globs []string, ls *SomeLs, pipes someutils.Pipes) ([]string, er
 	return args, nil
 }
 
-func list(out *tabwriter.Writer, errWriter io.Writer, dir, prefix string, ls *SomeLs, counter *int) error {
+func list(out *tabwriter.Writer, errPipe io.Writer, dir, prefix string, ls *SomeLs, counter *int) error {
 	if !strings.HasPrefix(dir, ".") || ls.AllFiles ||
 		strings.HasPrefix(dir, "..") || "." == dir {
 
 		entries, err := ioutil.ReadDir(dir)
 		if err != nil {
-			fmt.Fprintf(errWriter, "Error reading dir '%s'", dir)
+			fmt.Fprintf(errPipe, "Error reading dir '%s'", dir)
 			return err
 		}
 		//dirs first, then files
 		for _, entry := range entries {
 			if entry.IsDir() {
-				err = listItem(entry, out, errWriter, dir, prefix, ls, counter)
+				err = listItem(entry, out, errPipe, dir, prefix, ls, counter)
 				if err != nil {
 					return err
 				}
@@ -219,7 +219,7 @@ func list(out *tabwriter.Writer, errWriter io.Writer, dir, prefix string, ls *So
 		}
 		for _, entry := range entries {
 			if !entry.IsDir() {
-				err = listItem(entry, out, errWriter, dir, prefix, ls, counter)
+				err = listItem(entry, out, errPipe, dir, prefix, ls, counter)
 				if err != nil {
 					return err
 				}
@@ -229,7 +229,7 @@ func list(out *tabwriter.Writer, errWriter io.Writer, dir, prefix string, ls *So
 	return nil
 }
 
-func listItem(entry os.FileInfo, out *tabwriter.Writer, errWriter io.Writer, dir, prefix string, ls *SomeLs, counter *int) error {
+func listItem(entry os.FileInfo, out *tabwriter.Writer, errPipe io.Writer, dir, prefix string, ls *SomeLs, counter *int) error {
 	if !strings.HasPrefix(entry.Name(), ".") || ls.AllFiles {
 		printEntry(entry.Name(), entry, out, ls, counter)
 		if entry.IsDir() && ls.Recursive {
@@ -240,7 +240,7 @@ func listItem(entry os.FileInfo, out *tabwriter.Writer, errWriter io.Writer, dir
 				fmt.Fprintf(out, "%s:\t", folder)
 			}
 			*counter += 1
-			err := list(out, errWriter, filepath.Join(dir, entry.Name()), folder, ls, counter)
+			err := list(out, errPipe, filepath.Join(dir, entry.Name()), folder, ls, counter)
 			if err != nil {
 				return err
 			}

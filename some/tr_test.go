@@ -13,7 +13,7 @@ import (
 func TestTrCli(t *testing.T) {
 	//var out bytes.Buffer
 	//var errout bytes.Buffer
-	//pipes := someutils.NewPipes(strings.NewReader("HI"), &out, &errout)
+	//inPipe, outPipe, errPipe := (strings.NewReader("HI"), &out, &errout)
 	err := TrCli([]string{"tr", "I", "O"})
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
@@ -24,8 +24,8 @@ func TestTrCli(t *testing.T) {
 func TestFluentTr(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
-	pipes := someutils.NewPipes(strings.NewReader("HI"), &out, &errout)
-	err := Tr("I", "O").Exec(pipes)
+	inPipe, outPipe, errPipe := strings.NewReader("HI"), &out, &errout
+	err := Tr("I", "O").Exec(inPipe, outPipe, errPipe)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
@@ -37,12 +37,12 @@ func Test2pipes(t *testing.T) {
 	var errout bytes.Buffer
 	r, w := io.Pipe()
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	pipes1 := someutils.NewPipes(in, w, &errout)
-	pipes2 := someutils.NewPipes(r, &out, &errout)
+	inPipe1, outPipe1, errPipe1 := in, w, &errout
+	inPipe2, outPipe2, errPipe2 := r, &out, &errout
 	tr1 := Tr("H", "O")
 	tr2 := Tr("I", "J")
-	go tr1.Exec(pipes1)
-	go tr2.Exec(pipes2)
+	go tr1.Exec(inPipe1, outPipe1, errPipe1)
+	go tr2.Exec(inPipe2, outPipe2, errPipe2)
 	time.Sleep(1 * time.Second)
 	output := out.String()
 	expected := "Oi\nOo\nhJ\nhO\n"
@@ -56,8 +56,8 @@ func TestPipeline(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	pipes := someutils.NewPipes(in, &out, &errout)
-	e := someutils.Pipeline(pipes, Tr("H", "O"), Tr("I", "J"))
+	p := someutils.Pipeline{in, &out, &errout}
+	e := p.Pipe(Tr("H", "O"), Tr("I", "J"))
 	errs := someutils.CollectErrors(e, 2)
 	output := out.String()
 	expected := "Oi\nOo\nhJ\nhO\n"

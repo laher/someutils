@@ -92,7 +92,7 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 	return inputs, nil
 }
 
-func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
+func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	inputs, err := convertSet1(tr.Set1)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
 	if err != nil {
 		return err
 	}
-	fu := func(pipes someutils.Pipes, line []byte) error {
+	fu := func(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer, line []byte) error {
 		out := line
 		for i, reg := range inputs {
 			var output string
@@ -112,10 +112,10 @@ func (tr *SomeTr) Exec(pipes someutils.Pipes) error {
 			}
 			out = reg.ReplaceAll(out, []byte(output))
 		}
-		_, err = fmt.Fprintln(pipes.Out(), string(out))
+		_, err = fmt.Fprintln(outPipe, string(out))
 		return err
 	}
-	return someutils.LineProcessor(pipes, fu)
+	return someutils.LineProcessor(inPipe, outPipe, errPipe, fu)
 }
 
 func NewTr() *SomeTr {
@@ -142,10 +142,10 @@ func TrC(set1 string) *SomeTr {
 
 func TrCli(call []string) error {
 	tr := NewTr()
-	pipes := someutils.StdPipes()
-	err := tr.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := tr.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return tr.Exec(pipes)
+	return tr.Exec(inPipe, outPipe, errPipe)
 }

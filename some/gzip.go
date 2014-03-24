@@ -30,15 +30,15 @@ func (gz *SomeGzip) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (gz *SomeGzip) ParseFlags(call []string, errWriter io.Writer) error {
+func (gz *SomeGzip) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("gzip", "[options] [files...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	flagSet.AliasedBoolVar(&gz.IsKeep, []string{"k", "keep"}, false, "keep gzip file")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -57,7 +57,7 @@ func (gz *SomeGzip) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the gzip
-func (gz *SomeGzip) Exec(pipes someutils.Pipes) error {
+func (gz *SomeGzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	return GzipItems(gz.Filenames, gz)
 }
 
@@ -124,10 +124,10 @@ func Gzip(args ...string) *SomeGzip {
 // CLI invocation for *SomeGzip
 func GzipCli(call []string) error {
 	gz := NewGzip()
-	pipes := someutils.StdPipes()
-	err := gz.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := gz.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return gz.Exec(pipes)
+	return gz.Exec(inPipe, outPipe, errPipe)
 }

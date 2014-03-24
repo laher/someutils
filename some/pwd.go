@@ -25,15 +25,15 @@ func (pwd *SomePwd) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (pwd *SomePwd) ParseFlags(call []string, errWriter io.Writer) error {
+func (pwd *SomePwd) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("pwd", "", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -47,12 +47,12 @@ func (pwd *SomePwd) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the pwd
-func (pwd *SomePwd) Exec(pipes someutils.Pipes) error {
+func (pwd *SomePwd) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(pipes.Out(), wd)
+	fmt.Fprintln(outPipe, wd)
 	return nil
 }
 
@@ -70,10 +70,10 @@ func Pwd(args ...string) *SomePwd {
 // CLI invocation for *SomePwd
 func PwdCli(call []string) error {
 	pwd := NewPwd()
-	pipes := someutils.StdPipes()
-	err := pwd.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := pwd.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return pwd.Exec(pipes)
+	return pwd.Exec(inPipe, outPipe, errPipe)
 }

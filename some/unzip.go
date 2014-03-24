@@ -64,14 +64,14 @@ func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the unzip
-func (unzip *SomeUnzip) Exec(pipes someutils.Pipes) error {
+func (unzip *SomeUnzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if unzip.isTest {
-		err := TestItems(unzip.zipname, unzip.files, pipes.Out(), pipes.Err())
+		err := TestItems(unzip.zipname, unzip.files, outPipe, errPipe)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, pipes.Err())
+		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, errPipe)
 		if err != nil {
 			return err
 		}
@@ -222,10 +222,10 @@ func Unzip(zipname string, files ...string) *SomeUnzip {
 // CLI invocation for *SomeUnzip
 func UnzipCli(call []string) error {
 	unzip := NewUnzip()
-	pipes := someutils.StdPipes()
-	err := unzip.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := unzip.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return unzip.Exec(pipes)
+	return unzip.Exec(inPipe, outPipe, errPipe)
 }

@@ -55,7 +55,7 @@ func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the touch
-func (touch *SomeTouch) Exec(pipes someutils.Pipes) error {
+func (touch *SomeTouch) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 	for _, filename := range touch.args {
 		err := touchFile(filename)
@@ -100,10 +100,10 @@ func Touch(args ...string) *SomeTouch {
 // CLI invocation for *SomeTouch
 func TouchCli(call []string) error {
 	touch := NewTouch()
-	pipes := someutils.StdPipes()
-	err := touch.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := touch.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return touch.Exec(pipes)
+	return touch.Exec(inPipe, outPipe, errPipe)
 }

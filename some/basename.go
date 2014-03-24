@@ -26,12 +26,12 @@ func (basename *SomeBasename) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (basename *SomeBasename) ParseFlags(call []string, errWriter io.Writer) error {
+func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("basename", "", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -52,14 +52,14 @@ func (basename *SomeBasename) ParseFlags(call []string, errWriter io.Writer) err
 }
 
 // Exec actually performs the basename
-func (basename *SomeBasename) Exec(pipes someutils.Pipes) error {
+func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if basename.RelativeTo != "" {
 		last := strings.LastIndex(basename.RelativeTo, basename.InputPath)
 		base := basename.InputPath[:last]
-		_, err := fmt.Fprintln(pipes.Out(), base)
+		_, err := fmt.Fprintln(outPipe, base)
 		return err
 	} else {
-		_, err := fmt.Fprintln(pipes.Out(), path.Base(basename.InputPath))
+		_, err := fmt.Fprintln(outPipe, path.Base(basename.InputPath))
 		return err
 	}
 }
@@ -79,10 +79,10 @@ func Basename(args ...string) *SomeBasename {
 // CLI invocation for *SomeBasename
 func BasenameCli(call []string) error {
 	basename := NewBasename()
-	pipes := someutils.StdPipes()
-	err := basename.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := basename.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return basename.Exec(pipes)
+	return basename.Exec(inPipe, outPipe, errPipe)
 }

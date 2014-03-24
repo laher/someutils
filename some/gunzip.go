@@ -29,15 +29,15 @@ func (gunzip *SomeGunzip) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (gunzip *SomeGunzip) ParseFlags(call []string, errWriter io.Writer) error {
+func (gunzip *SomeGunzip) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("gunzip", "[options] file.gz [list...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&gunzip.IsTest, []string{"t", "test"}, false, "test archive data")
 	flagSet.AliasedBoolVar(&gunzip.IsKeep, []string{"k", "keep"}, false, "keep gzip file")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -55,14 +55,14 @@ func (gunzip *SomeGunzip) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the gunzip
-func (gunzip *SomeGunzip) Exec(pipes someutils.Pipes) error {
+func (gunzip *SomeGunzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if gunzip.IsTest {
 		err := TestGzipItems(gunzip.Filenames)
 		if err != nil {
 			return err
 		}
 	} else {
-		err := GunzipItems(gunzip.Filenames, gunzip, pipes.Out())
+		err := GunzipItems(gunzip.Filenames, gunzip, outPipe)
 		if err != nil {
 			return err
 		}
@@ -159,10 +159,10 @@ func Gunzip(args ...string) *SomeGunzip {
 // CLI invocation for *SomeGunzip
 func GunzipCli(call []string) error {
 	gunzip := NewGunzip()
-	pipes := someutils.StdPipes()
-	err := gunzip.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := gunzip.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return gunzip.Exec(pipes)
+	return gunzip.Exec(inPipe, outPipe, errPipe)
 }

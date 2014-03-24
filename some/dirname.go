@@ -23,13 +23,13 @@ func (dirname *SomeDirname) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (dirname *SomeDirname) ParseFlags(call []string, errWriter io.Writer) error {
+func (dirname *SomeDirname) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("dirname", "[options] NAME...", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -42,10 +42,10 @@ func (dirname *SomeDirname) ParseFlags(call []string, errWriter io.Writer) error
 }
 
 // Exec actually performs the dirname
-func (dirname *SomeDirname) Exec(pipes someutils.Pipes) error {
+func (dirname *SomeDirname) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	for _, f := range dirname.Filenames {
 		dir := path.Dir(f)
-		fmt.Fprintln(pipes.Out(), dir)
+		fmt.Fprintln(outPipe, dir)
 	}
 	return nil
 }
@@ -65,10 +65,10 @@ func Dirname(args ...string) *SomeDirname {
 // CLI invocation for *SomeDirname
 func DirnameCli(call []string) error {
 	dirname := NewDirname()
-	pipes := someutils.StdPipes()
-	err := dirname.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := dirname.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return dirname.Exec(pipes)
+	return dirname.Exec(inPipe, outPipe, errPipe)
 }

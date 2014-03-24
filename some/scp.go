@@ -28,15 +28,15 @@ func (s *SomeScp) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (s *SomeScp) ParseFlags(call []string, errWriter io.Writer) error {
+func (s *SomeScp) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("scp", "[options] [args...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -51,7 +51,7 @@ func (s *SomeScp) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the scp
-func (s *SomeScp) Exec(pipes someutils.Pipes) error {
+func (s *SomeScp) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 	return scp.Scp(s.args)
 }
@@ -71,10 +71,10 @@ func Scp(args ...string) *SomeScp {
 // CLI invocation for *SomeScp
 func ScpCli(call []string) error {
 	s := NewScp()
-	pipes := someutils.StdPipes()
-	err := s.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := s.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return s.Exec(pipes)
+	return s.Exec(inPipe, outPipe, errPipe)
 }

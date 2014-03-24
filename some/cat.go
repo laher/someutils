@@ -42,16 +42,16 @@ func (cat *SomeCat) SqueezeBlank() *SomeCat {
 	cat.IsSqueezeBlank = true
 	return cat
 }
-func (cat *SomeCat) ParseFlags(call []string, errWriter io.Writer) error {
+func (cat *SomeCat) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("cat", "[options] [files...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&cat.IsShowEnds, []string{"E", "show-ends"}, false, "display $ at end of each line")
 	flagSet.AliasedBoolVar(&cat.IsNumber, []string{"n", "number"}, false, "number all output lines")
 	flagSet.AliasedBoolVar(&cat.IsSqueezeBlank, []string{"s", "squeeze-blank"}, false, "squeeze repeated empty output lines")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -65,12 +65,12 @@ func (cat *SomeCat) ParseFlags(call []string, errWriter io.Writer) error {
 	return nil
 }
 
-func (cat *SomeCat) Exec(pipes someutils.Pipes) error {
+func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if len(cat.FileNames) > 0 {
 		for _, fileName := range cat.FileNames {
 			if file, err := os.Open(fileName); err == nil {
 				if cat.isStraightCopy() {
-					_, err = io.Copy(pipes.Out(), file)
+					_, err = io.Copy(outPipe, file)
 					if err != nil {
 						return err
 					}
@@ -92,7 +92,7 @@ func (cat *SomeCat) Exec(pipes someutils.Pipes) error {
 							} else {
 								suffix = ""
 							}
-							fmt.Fprintf(pipes.Out(), "%s%s%s\n", prefix, text, suffix)
+							fmt.Fprintf(outPipe, "%s%s%s\n", prefix, text, suffix)
 						}
 						line++
 					}
@@ -107,7 +107,7 @@ func (cat *SomeCat) Exec(pipes someutils.Pipes) error {
 			}
 		}
 	} else {
-		_, err := io.Copy(pipes.Out(), pipes.In())
+		_, err := io.Copy(outPipe, inPipe)
 		if err != nil {
 			return err
 		}
@@ -127,10 +127,10 @@ func Cat(fileNames ...string) *SomeCat {
 
 func CatCli(call []string) error {
 	cat := NewCat()
-	pipes := someutils.StdPipes()
-	err := cat.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := cat.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return cat.Exec(pipes)
+	return cat.Exec(inPipe, outPipe, errPipe)
 }

@@ -26,13 +26,13 @@ func (sleep *SomeSleep) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (sleep *SomeSleep) ParseFlags(call []string, errWriter io.Writer) error {
+func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("sleep", "", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -57,7 +57,7 @@ func (sleep *SomeSleep) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the sleep
-func (sleep *SomeSleep) Exec(pipes someutils.Pipes) error {
+func (sleep *SomeSleep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	var unitDur time.Duration
 	switch sleep.unit {
 	case "d":
@@ -92,10 +92,10 @@ func Sleep(amount int, unit string) *SomeSleep {
 // CLI invocation for *SomeSleep
 func SleepCli(call []string) error {
 	sleep := NewSleep()
-	pipes := someutils.StdPipes()
-	err := sleep.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := sleep.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return sleep.Exec(pipes)
+	return sleep.Exec(inPipe, outPipe, errPipe)
 }

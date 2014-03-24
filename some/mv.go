@@ -26,15 +26,15 @@ func (mv *SomeMv) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (mv *SomeMv) ParseFlags(call []string, errWriter io.Writer) error {
+func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -46,7 +46,7 @@ func (mv *SomeMv) ParseFlags(call []string, errWriter io.Writer) error {
 	args := flagSet.Args()
 
 	if len(args) < 2 {
-		fmt.Fprintf(errWriter, "Error: not enough arguments\n\n")
+		fmt.Fprintf(errPipe, "Error: not enough arguments\n\n")
 		flagSet.Usage()
 		return errors.New("Not enough arguments")
 	}
@@ -58,7 +58,7 @@ func (mv *SomeMv) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the mv
-func (mv *SomeMv) Exec(pipes someutils.Pipes) error {
+func (mv *SomeMv) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	for _, srcGlob := range mv.srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
@@ -71,7 +71,7 @@ func (mv *SomeMv) Exec(pipes someutils.Pipes) error {
 		for _, src := range srces {
 			err = moveFile(src, mv.dest)
 			if err != nil {
-				fmt.Fprintf(pipes.Err(), "Error %v\n", err)
+				fmt.Fprintf(errPipe, "Error %v\n", err)
 				return err
 			}
 		}
@@ -134,10 +134,10 @@ func Mv(args ...string) *SomeMv {
 // CLI invocation for *SomeMv
 func MvCli(call []string) error {
 	mv := NewMv()
-	pipes := someutils.StdPipes()
-	err := mv.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := mv.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return mv.Exec(pipes)
+	return mv.Exec(inPipe, outPipe, errPipe)
 }

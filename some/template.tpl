@@ -23,15 +23,15 @@ func ({{.Name}} *Some{{.NameUCF}}) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func ({{.Name}} *Some{{.NameUCF}}) ParseFlags(call []string, errWriter io.Writer) error {
+func ({{.Name}} *Some{{.NameUCF}}) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("{{.Name}}", "[options] [args...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
 	
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -45,7 +45,7 @@ func ({{.Name}} *Some{{.NameUCF}}) ParseFlags(call []string, errWriter io.Writer
 }
 
 // Exec actually performs the {{.Name}}
-func ({{.Name}} *Some{{.NameUCF}}) Exec(pipes someutils.Pipes) error {
+func ({{.Name}} *Some{{.NameUCF}}) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 }
 
@@ -64,10 +64,10 @@ func {{.NameUCF}}(args ...string) *Some{{.NameUCF}} {
 // CLI invocation for *Some{{.NameUCF}}
 func {{.NameUCF}}Cli(call []string) error {
 	{{.Name}} := New{{.NameUCF}}()
-	pipes := someutils.StdPipes()
-	err := {{.Name}}.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := {{.Name}}.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return {{.Name}}.Exec(pipes)
+	return {{.Name}}.Exec(inPipe, outPipe, errPipe)
 }

@@ -43,9 +43,9 @@ func (grep *SomeGrep) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
+func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("grep", "[options] PATTERN [files...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&grep.IsPerl, []string{"P", "perl-regexp"}, false, "Perl-style regex")
 	flagSet.AliasedBoolVar(&grep.IsExtended, []string{"E", "extended-regexp"}, true, "Extended regex (default)")
 	flagSet.AliasedBoolVar(&grep.IsIgnoreCase, []string{"i", "ignore-case"}, false, "ignore case")
@@ -57,7 +57,7 @@ func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -83,7 +83,7 @@ func (grep *SomeGrep) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the grep
-func (grep *SomeGrep) Exec(pipes someutils.Pipes) error {
+func (grep *SomeGrep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	reg, err := compile(grep.pattern, grep)
 	if err != nil {
 		return err
@@ -100,11 +100,11 @@ func (grep *SomeGrep) Exec(pipes someutils.Pipes) error {
 			}
 			files = append(files, results...)
 		}
-		return grepAll(reg, files, grep, pipes.Out())
+		return grepAll(reg, files, grep, outPipe)
 	} else {
 		if uggo.IsPipingStdin() {
 			//check STDIN
-			return grepReader(pipes.In(), "", reg, grep, pipes.Out())
+			return grepReader(inPipe, "", reg, grep, outPipe)
 		} else {
 			//NOT piping.
 			return errors.New("Not enough args")
@@ -204,10 +204,10 @@ func Grep(args ...string) *SomeGrep {
 // CLI invocation for *SomeGrep
 func GrepCli(call []string) error {
 	grep := NewGrep()
-	pipes := someutils.StdPipes()
-	err := grep.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := grep.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return grep.Exec(pipes)
+	return grep.Exec(inPipe, outPipe, errPipe)
 }

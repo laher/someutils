@@ -27,15 +27,15 @@ func (head *SomeHead) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (head *SomeHead) ParseFlags(call []string, errWriter io.Writer) error {
+func (head *SomeHead) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("head", "[options] [args...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	flagSet.AliasedIntVar(&head.lines, []string{"n", "lines"}, 10, "number of lines to print")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -49,7 +49,7 @@ func (head *SomeHead) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the head
-func (head *SomeHead) Exec(pipes someutils.Pipes) error {
+func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	//TODO do something here!
 	if len(head.Filenames) > 0 {
 		for _, fileName := range head.Filenames {
@@ -57,7 +57,7 @@ func (head *SomeHead) Exec(pipes someutils.Pipes) error {
 			if err != nil {
 				return err
 			}
-			err = headFile(file, head, pipes.Out())
+			err = headFile(file, head, outPipe)
 			if err != nil {
 				file.Close()
 				return err
@@ -70,7 +70,7 @@ func (head *SomeHead) Exec(pipes someutils.Pipes) error {
 		return nil
 	} else {
 		//stdin ..
-		return headFile(pipes.In(), head, pipes.Out())
+		return headFile(inPipe, head, outPipe)
 	}
 }
 
@@ -104,10 +104,10 @@ func Head(args ...string) *SomeHead {
 // CLI invocation for *SomeHead
 func HeadCli(call []string) error {
 	head := NewHead()
-	pipes := someutils.StdPipes()
-	err := head.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := head.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return head.Exec(pipes)
+	return head.Exec(inPipe, outPipe, errPipe)
 }

@@ -3,20 +3,19 @@ package some
 import (
 	"bytes"
 	"fmt"
-	"github.com/laher/someutils"
 	"strings"
 	"testing"
 )
 
 func TestBasename(t *testing.T) {
-	var out bytes.Buffer
-	var errout bytes.Buffer
-	pipes := someutils.NewPipes(strings.NewReader("some/text"), &out, &errout)
+	var outPipe bytes.Buffer
+	var errPipe bytes.Buffer
+	inPipe := strings.NewReader("some/text")
 	basename := NewBasename()
-	err := basename.Exec(pipes)
+	err := basename.Exec(inPipe, &outPipe, &errPipe)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
-	println(out.String())
+	println(outPipe.String())
 	// TODO: 'Output' string for testing?
 }

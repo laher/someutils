@@ -26,15 +26,15 @@ func (rm *SomeRm) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (rm *SomeRm) ParseFlags(call []string, errWriter io.Writer) error {
+func (rm *SomeRm) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("rm", "[options] [files...]", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 
 	flagSet.BoolVar(&rm.IsRecursive, "r", false, "Recurse into directories")
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -48,7 +48,7 @@ func (rm *SomeRm) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the rm
-func (rm *SomeRm) Exec(pipes someutils.Pipes) error {
+func (rm *SomeRm) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	for _, fileGlob := range rm.fileGlobs {
 		files, err := filepath.Glob(fileGlob)
 		if err != nil {
@@ -111,10 +111,10 @@ func Rm(args ...string) *SomeRm {
 // CLI invocation for *SomeRm
 func RmCli(call []string) error {
 	rm := NewRm()
-	pipes := someutils.StdPipes()
-	err := rm.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := rm.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return rm.Exec(pipes)
+	return rm.Exec(inPipe, outPipe, errPipe)
 }

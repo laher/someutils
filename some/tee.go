@@ -27,16 +27,16 @@ func (tee *SomeTee) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (tee *SomeTee) ParseFlags(call []string, errWriter io.Writer) error {
+func (tee *SomeTee) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("tee", "[OPTION]... [FILE]...", someutils.VERSION)
-	flagSet.SetOutput(errWriter)
+	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&tee.isAppend, []string{"a", "append"}, false, "Append instead of overwrite")
 
 	// TODO add flags here
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
+		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
 		flagSet.Usage()
 		return err
 	}
@@ -50,7 +50,7 @@ func (tee *SomeTee) ParseFlags(call []string, errWriter io.Writer) error {
 }
 
 // Exec actually performs the tee
-func (tee *SomeTee) Exec(pipes someutils.Pipes) error {
+func (tee *SomeTee) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	flag := os.O_CREATE
 	if tee.isAppend {
 		flag = flag | os.O_APPEND
@@ -60,12 +60,12 @@ func (tee *SomeTee) Exec(pipes someutils.Pipes) error {
 	if err != nil {
 		return err
 	}
-	writers := []io.Writer{pipes.Out()}
+	writers := []io.Writer{outPipe}
 	for _, file := range files {
 		writers = append(writers, file)
 	}
 	multiwriter := io.MultiWriter(writers...)
-	_, err = io.Copy(multiwriter, pipes.In())
+	_, err = io.Copy(multiwriter, inPipe)
 	if err != nil {
 		return err
 	}
@@ -94,10 +94,10 @@ func Tee(args ...string) *SomeTee {
 // CLI invocation for *SomeTee
 func TeeCli(call []string) error {
 	tee := NewTee()
-	pipes := someutils.StdPipes()
-	err := tee.ParseFlags(call, pipes.Err())
+	inPipe, outPipe, errPipe := someutils.StdPipes()
+	err := tee.ParseFlags(call, errPipe)
 	if err != nil {
 		return err
 	}
-	return tee.Exec(pipes)
+	return tee.Exec(inPipe, outPipe, errPipe)
 }
