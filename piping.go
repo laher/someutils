@@ -65,7 +65,7 @@ func (p *Pipeline) Pipe(execables ...Execable) chan error {
 	return e
 }
 
-func (p *Pipeline) PipeSync(execables ...Execable) (bool, []error) {
+func (p *Pipeline) PipeAndSync(execables ...Execable) (bool, []error) {
 	e := p.Pipe(execables...)
 	return CollectErrors(e, len(execables))
 }

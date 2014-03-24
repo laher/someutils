@@ -13,7 +13,7 @@ func TestPipeline1(t *testing.T) {
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	p := someutils.Pipeline{in, &out, &errout}
-	ok, errs := p.PipeSync(Tr("H", "O"), Tr("I", "J"), Grep("O"))
+	ok, errs := p.PipeAndSync(Tr("H", "O"), Tr("I", "J"), Grep("O"))
 	if !ok {
 		fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
 		fmt.Printf("Errout: %+v\n", errout.String())
@@ -25,10 +25,9 @@ func TestPipeline1(t *testing.T) {
 	}
 }
 
-
 func TestPipeline2(t *testing.T) {
 	p, out, errout := someutils.NewPipelineFromString("Hi\nHo\nhI\nhO\n")
-	ok, errs := p.PipeSync(Tr("H", "O"), Tr("I", "J"), Grep("O"))
+	ok, errs := p.PipeAndSync(Tr("H", "O"), Tr("I", "J"), Grep("O"))
 	if !ok {
 		t.Logf("Errors: %d, %+v\n", len(errs), errs)
 		t.Logf("Errout: %+v\n", errout.String())
