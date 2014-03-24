@@ -58,12 +58,14 @@ func TestPipeline(t *testing.T) {
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	p := someutils.Pipeline{in, &out, &errout}
 	e := p.Pipe(Tr("H", "O"), Tr("I", "J"))
-	errs := someutils.CollectErrors(e, 2)
+	ok, errs := someutils.CollectErrors(e, 2)
+	if !ok {
+		fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
+		fmt.Printf("Errout: %+v\n", errout.String())
+	}
 	output := out.String()
 	expected := "Oi\nOo\nhJ\nhO\n"
 	if output != expected {
 		t.Error("Expected\n ", expected, ", Got:\n ", output)
 	}
-	fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
-	fmt.Printf("Errout: %+v\n", errout.String())
 }

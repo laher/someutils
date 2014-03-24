@@ -8,11 +8,6 @@ import (
 	"os"
 	"strings"
 )
-
-type Execable interface {
-	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error
-}
-
 func StdPipes() (io.Reader, io.Writer, io.Writer) {
 	return os.Stdin, os.Stdout, os.Stderr
 }
@@ -70,17 +65,22 @@ func (p *Pipeline) Pipe(execables ...Execable) chan error {
 	return e
 }
 
-func (p *Pipeline) PipeSync(execables ...Execable) []error {
+func (p *Pipeline) PipeSync(execables ...Execable) (bool, []error) {
 	e := p.Pipe(execables...)
 	return CollectErrors(e, len(execables))
 }
 
-func CollectErrors(e chan error, count int) []error {
+func CollectErrors(e chan error, count int) (bool, []error) {
 	errs := []error{}
+	ok := true
 	for i := 0; i < count; i++ {
-		errs = append(errs, <-e)
+		err := <- e
+		if err != nil {
+			ok = false
+		}
+		errs = append(errs, err)
 	}
-	return errs
+	return ok, errs
 }
 
 type LineProcessorFunc func(io.Reader, io.Writer, io.Writer, []byte) error

@@ -23,8 +23,10 @@ func ExamplePipeline() {
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	p := Pipeline{in, os.Stdout, &errout}
 	e := p.Pipe(&ExampleUtil{}, &ExampleUtil{})
-	errs := CollectErrors(e, 2)
-	fmt.Fprintln(os.Stderr, errs)
+	ok, errs := CollectErrors(e, 2)
+	if !ok {
+		fmt.Fprintln(os.Stderr, errs)
+	}
 	// Output:
 	// Hi
 	// Ho
