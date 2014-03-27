@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewDirname() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewDirname() })
 }
 
 // SomeDirname represents and performs a `dirname` invocation

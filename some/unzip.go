@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewUnzip() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewUnzip() })
 }
 
 // SomeUnzip represents and performs a `unzip` invocation

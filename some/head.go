@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewHead() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewHead() })
 }
 
 // SomeHead represents and performs a `head` invocation

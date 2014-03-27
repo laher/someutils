@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewRm() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewRm() })
 }
 
 // SomeRm represents and performs a `rm` invocation

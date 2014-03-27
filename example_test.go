@@ -21,7 +21,7 @@ func (ex *ExampleUtil) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writ
 func ExamplePipeline() {
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	p := Pipeline{in, os.Stdout, &errout}
+	p := NewPipeline(in, os.Stdout, &errout)
 	e := p.Pipe(&ExampleUtil{}, &ExampleUtil{})
 	ok, errs := CollectErrors(e, 2)
 	if !ok {

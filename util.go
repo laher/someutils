@@ -7,55 +7,46 @@ const (
 )
 
 //The Util is the simplest form of utility. By itself it can be registered as a commandline tool, but NOT a pipeline-able function
-type Util struct {
+type CliUtil struct {
 	Name     string
 	Function func([]string) error
 }
 
-var (
-	allUtils = make(map[string]Util)
-)
-
-func Register(u Util) {
-	allUtils[u.Name] = u
-}
-
-func Exists(name string) bool {
-	_, exists := allUtils[name]
-	return exists
-}
-
-func Call(name string, args []string) error {
-	return allUtils[name].Function(args)
-}
-
-func List() []string {
-	ret := []string{}
-	for k, _ := range allUtils {
-		ret = append(ret, k)
-	}
-	return ret
-}
-
-//an Execable can be executed on a pipeline
-type Execable interface {
+//a Pipable can be executed on a pipeline
+type Pipable interface {
 	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error
 }
 
-//Someutil represents a util which can be initialized by flags & executed on a Pipeline
-type SomeUtil interface {
-	Execable
+//PipableUtil represents a util which can be initialized by flags & executed on a Pipeline
+type PipableCliUtil interface {
+	Pipable
 	ParseFlags(call []string, errOut io.Writer) error
 	Name() string
 }
 
-type SomeFunc func() SomeUtil
+type PipableFunc func() PipableCliUtil
 
-func RegisterSome(somefunc SomeFunc) {
+type ArchiveItem struct {
+	//if FileSystemPath is empty, use Data instead
+	FileSystemPath string
+	ArchivePath    string
+	Data           []byte
+}
+
+var (
+	allCliUtils = make(map[string]CliUtil)
+)
+
+//Registers utils for use by 'some' command
+func Register(u CliUtil) {
+	allCliUtils[u.Name] = u
+}
+
+func RegisterPipable(somefunc PipableFunc) {
 
 	inPipe, outPipe, errPipe := StdPipes()
 
-	Register(Util{somefunc().Name(), func(call []string) error {
+	Register(CliUtil{somefunc().Name(), func(call []string) error {
 		someutil := somefunc()
 		err := someutil.ParseFlags(call, errPipe)
 		if err != nil {
@@ -67,10 +58,22 @@ func RegisterSome(somefunc SomeFunc) {
 
 }
 
-
-type ArchiveItem struct {
-	//if FileSystemPath is empty, use Data instead
-	FileSystemPath string
-	ArchivePath    string
-	Data           []byte
+func Exists(name string) bool {
+	_, exists := allCliUtils[name]
+	return exists
 }
+
+func Call(name string, args []string) error {
+	return allCliUtils[name].Function(args)
+}
+
+func List() []string {
+	ret := []string{}
+	for k, _ := range allCliUtils {
+		ret = append(ret, k)
+	}
+	return ret
+}
+
+
+

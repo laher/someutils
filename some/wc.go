@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewWc() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewWc() })
 }
 
 // SomeWc represents and performs a `wc` invocation

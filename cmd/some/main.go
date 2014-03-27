@@ -25,7 +25,7 @@ func main() {
 }
 
 func showHelp(msg string) {
-	fmt.Fprintln(os.Stderr, "`someutils`")
+	fmt.Fprintln(os.Stderr, "`some`")
 	fmt.Fprintln(os.Stderr, msg)
 	fmt.Fprintln(os.Stderr, " Available commands:")
 	fmt.Fprintf(os.Stderr, " %v\n", someutils.List())

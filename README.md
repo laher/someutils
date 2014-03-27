@@ -9,7 +9,7 @@ Some CLI utilities written in Go.
  * New in v0.5: you can use someutils as a library.
 
 		p, outBuffer, errBuffer := someutils.NewPipelineFromString("Hi\nHo\n")
-		ok, errs := p.PipeAndSync(some.Tr("i", "o"), some.Grep("o"))
+		ok, errs := p.PipeAndWait(some.Tr("i", "o"), some.Grep("o"))
 		if ok {
 			result := outBuffer.String()
 			println(result)

@@ -14,7 +14,7 @@ type LnOptions struct {
 }
 
 func init() {
-	Register(Util{
+	Register(CliUtil{
 		"ln",
 		Ln})
 }

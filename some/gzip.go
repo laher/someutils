@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewGzip() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewGzip() })
 }
 
 // SomeGzip represents and performs a `gzip` invocation

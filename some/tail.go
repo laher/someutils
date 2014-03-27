@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewTail() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewTail() })
 }
 
 // SomeTail represents and performs a `tail` invocation

@@ -11,15 +11,17 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewTr() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewTr() })
 }
 
 type SomeTr struct {
 	IsDelete     bool
 	IsComplement bool
 	IsReplace    bool
-	Set1         string
-	Set2         string
+	set1         string
+	set2         string
+	inputs	     []*regexp.Regexp
+	outputs      []string
 }
 
 func (tr *SomeTr) Name() string {
@@ -38,16 +40,37 @@ func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) error {
 	}
 	sets := flagSet.Args()
 	if len(sets) > 0 {
-		tr.Set1 = sets[0]
+		err = tr.SetSet1(sets[0])
+		if err != nil {
+			return err
+		}
 	} else {
 		return errors.New("Not enough args supplied")
 	}
 	if len(sets) > 1 {
-		tr.Set2 = sets[1]
+		err = tr.SetSet2(sets[1])
+		if err != nil {
+			return err
+		}
 	} else if !tr.IsDelete && !tr.IsComplement {
 		return errors.New("Not enough args supplied")
 	}
 	return nil
+}
+
+func (tr *SomeTr) SetSet1(set1 string) error {
+	tr.set1 = set1
+	//tr.inputs, err := convertSet1(tr.set1)
+	inputs, err := convertSet1(set1)
+	tr.inputs = inputs
+	return err
+}
+func (tr *SomeTr) SetSet2(set2 string) error {
+	tr.set2 = set2
+	//tr.outputs, err := convertSet2(tr.set2)
+	outputs, err := convertSet2(set2)
+	tr.outputs = outputs
+	return err
 }
 
 func convertSet2(set2 string) ([]string, error) {
@@ -93,6 +116,7 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 }
 
 func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+	/*
 	inputs, err := convertSet1(tr.Set1)
 	if err != nil {
 		return err
@@ -101,20 +125,25 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 	if err != nil {
 		return err
 	}
+	*/
 	fu := func(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer, line []byte) error {
 		out := line
-		for i, reg := range inputs {
+		for i, reg := range tr.inputs {
 			var output string
-			if len(outputs) > i {
-				output = outputs[i]
+			if len(tr.outputs) > i {
+				output = tr.outputs[i]
 			} else {
-				output = outputs[len(outputs)-1]
+				output = tr.outputs[len(tr.outputs)-1]
 			}
 			out = reg.ReplaceAll(out, []byte(output))
 		}
-		_, err = fmt.Fprintln(outPipe, string(out))
+	//	fmt.Printf("From %v to %v\n", string(line), string(out))
+		_, err := fmt.Fprintln(outPipe, string(out))
 		return err
 	}
+	//fmt.Printf("from %v\n", tr.inputs)
+	//fmt.Printf("to %v\n", tr.outputs)
+
 	return someutils.LineProcessor(inPipe, outPipe, errPipe, fu)
 }
 
@@ -123,20 +152,20 @@ func NewTr() *SomeTr {
 }
 func Tr(set1, set2 string) *SomeTr {
 	tr := NewTr()
-	tr.Set1 = set1
-	tr.Set2 = set2
+	tr.SetSet1(set1)
+	tr.SetSet2(set2)
 	return tr
 }
 func TrD(set1 string) *SomeTr {
 	tr := NewTr()
 	tr.IsDelete = true
-	tr.Set1 = set1
+	tr.SetSet1(set1)
 	return tr
 }
 func TrC(set1 string) *SomeTr {
 	tr := NewTr()
 	tr.IsComplement = true
-	tr.Set1 = set1
+	tr.SetSet1(set1)
 	return tr
 }
 

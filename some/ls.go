@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewLs() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewLs() })
 }
 
 // SomeLs represents and performs a `ls` invocation

@@ -56,10 +56,10 @@ func TestPipeline(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	p := someutils.Pipeline{in, &out, &errout}
+	p := someutils.Pipeline{in, &out, &errout, strings.NewReader("")}
 	e := p.Pipe(Tr("H", "O"), Tr("I", "J"))
-	ok, errs := someutils.CollectErrors(e, 2)
-	if !ok {
+	ok, errs := someutils.CollectErrors(e, 2, 2)
+	if !ok || len(errs)>0 {
 		fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
 		fmt.Printf("Errout: %+v\n", errout.String())
 	}

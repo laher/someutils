@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.SomeUtil { return NewSleep() })
+	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewSleep() })
 }
 
 // SomeSleep represents and performs a `sleep` invocation
