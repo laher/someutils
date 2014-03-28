@@ -38,13 +38,26 @@ func NewPipelineFromString(input string) (*Pipeline, *bytes.Buffer, *bytes.Buffe
 
 func runAsync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe io.Writer, errInPipe io.Reader, closers []io.Closer, e chan error) {
 	_, willRedirectErrIn := pipable.(WillRedirectErrIn)
-	if !willRedirectErrIn {
+	if willRedirectErrIn {
+		go  func() {
+			j, err := io.Copy(outPipe, errInPipe)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Error! copying errInPipe to outPipe", err)
+			}
+//			if j > 0 {
+				fmt.Fprintln(os.Stderr, "Finished copying errInPipe to outPipe", j)
+//			}
+		}()
+
+	} else {
 		go  func() {
 			j, err := io.Copy(errOutPipe, errInPipe)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error! copying errInPipe to errOutPipe", err)
 			}
-			fmt.Fprintln(os.Stderr, "Finished copying errInPipe to errOutPipe", j)
+			if j > 0 {
+				fmt.Fprintln(os.Stderr, "Finished copying errInPipe to errOutPipe", j)
+			}
 		}()
 	}
 	go func() {
@@ -108,7 +121,7 @@ func runSync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe io
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(os.Stderr, "Ran pipable.Exec")
+		//fmt.Fprintln(os.Stderr, "Ran pipable.Exec")
 		/*
 		bb, isBb := errOutPipe.(*bytes.Buffer)
 		if isBb {
@@ -187,7 +200,7 @@ func (p *Pipeline) Pipe(pipables ...Pipable) chan error {
 		//go  func() {
 			
 			//println(pipable)
-			runAsync(pipable, locInPipe, locOutPipe, locErrOutPipe, locErrInPipe, closers, e)
+		runAsync(pipable, locInPipe, locOutPipe, locErrOutPipe, locErrInPipe, closers, e)
 
 		//}()
 		previousReader = &r

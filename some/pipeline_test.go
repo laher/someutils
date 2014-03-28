@@ -76,16 +76,16 @@ func TestRedirectOutErr(t *testing.T) {
 
 func TestRedirectOutErrErrOut(t *testing.T) {
 	p, out, errout := someutils.NewPipelineFromString("Hi\nHo\nhI\nhO\n")
-	ok, errs := p.PipeAndWait(3, Tr("H", "O"), Tr("I", "J"), Grep("O"), RedirectOutToErr(), RedirectErrToOut())
+	ok, errs := p.PipeAndWait(6, Tr("H", "O"), Tr("I", "J"), Grep("O"), RedirectOutToErr(), RedirectErrToOut())
 	if !ok {
 		t.Logf("Errors: %d, %+v\n", len(errs), errs)
 		t.Logf("Errout: %+v\n", errout.String())
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"
-	if output != expected {
 		t.Logf("Errout: %+v", errout.String())
 		t.Logf("Stdout: %+v", output)
+	if output != expected {
 		t.Error("Expected\n ", expected, ", Got:\n ", output)
 	}
 }
