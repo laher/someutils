@@ -22,9 +22,9 @@ func ExamplePipeline() {
 	p := NewPipeline(&ExampleUtil{}, &ExampleUtil{})
 	pipes := NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), os.Stdout, os.Stderr)
 	e := p.Pipe(pipes)
-	ok, errs := AwaitErrorsFor(e, 2, 2 * time.Second)
-	if !ok {
-		fmt.Fprintln(os.Stderr, errs)
+	err := WaitFor(e, 2, 2 * time.Second)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
 	}
 	// Output:
 	// Hi

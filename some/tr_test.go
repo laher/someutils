@@ -57,9 +57,9 @@ func TestTrPipeline(t *testing.T) {
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"))
 	e := pipeline.Pipe(someutils.NewPipeset(in, &out, &errout))
-	ok, errs := someutils.AwaitErrors(e, 2)
-	if !ok {
-		t.Logf("Errors: %d, %+v\n", len(errs), errs)
+	err := someutils.Wait(e, 2)
+	if err != nil {
+		t.Logf("Errors: %+v\n", err)
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Error("Unexpected errors")
 	}

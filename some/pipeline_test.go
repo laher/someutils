@@ -11,11 +11,11 @@ import (
 func TestPipeline1(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O")) //, RedirectTo("file.txt"))
-	ok, errs := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
-	if !ok {
+	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"
@@ -26,13 +26,14 @@ func TestPipeline1(t *testing.T) {
 
 func TestPipeline2(t *testing.T) {
 	var out, errout bytes.Buffer
-	p := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"))
-	ok, errs := p.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
-	if !ok {
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"))
+	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
+
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"
 	if output != expected {
@@ -43,12 +44,12 @@ func TestPipeline2(t *testing.T) {
 
 func TestRedirect1(t *testing.T) {
 	var out, errout bytes.Buffer
-	p := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutTo("test.txt"), Cat("test.txt"))
-	ok, errs := p.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
-	if !ok {
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutTo("test.txt"), Cat("test.txt"))
+	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"
@@ -59,12 +60,12 @@ func TestRedirect1(t *testing.T) {
 
 func TestRedirectOutErr(t *testing.T) {
 	var out, errout bytes.Buffer
-	p := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr())
-	ok, errs := p.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
-	if !ok {
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr())
+	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
 	output := out.String()
 	outputErr := errout.String()
@@ -77,12 +78,12 @@ func TestRedirectOutErr(t *testing.T) {
 }
 func TestRedirectOutNull(t *testing.T) {
 	var out, errout bytes.Buffer
-	p := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToNull())
-	ok, errs := p.PipeAndWaitFor(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout), 1 * time.Second)
-	if !ok {
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToNull())
+	err := pipeline.PipeAndWaitFor(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout), 1 * time.Second)
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
 	output := out.String()
 	outputErr := errout.String()
@@ -95,12 +96,12 @@ func TestRedirectOutNull(t *testing.T) {
 }
 func TestRedirectOutErrErrOut(t *testing.T) {
 	var out, errout bytes.Buffer
-	p := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr(), ErrToOut())
-	ok, errs := p.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
-	if !ok {
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr(), ErrToOut())
+	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
-		t.Errorf("Errors: %d, %+v\n", len(errs), errs)
+		t.Errorf("Error: %+v\n", err)
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"

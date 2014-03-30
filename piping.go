@@ -162,20 +162,64 @@ type WillRedirectErrIn interface {
 }
 
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) PipeAndWait(pipes *Pipeset) (bool, []error) {
+func (p *Pipeline) PipeAndWait(pipes *Pipeset) error {
 	e := p.Pipe(pipes)
-	return AwaitErrors(e, len(p.pipables))
+	return Wait(e, len(p.pipables))
 }
 
 
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) PipeAndWaitFor(pipes *Pipeset, timeout time.Duration) (bool, []error) {
+func (p *Pipeline) PipeAndWaitFor(pipes *Pipeset, timeout time.Duration) error {
 	e := p.Pipe(pipes)
-	return AwaitErrorsFor(e, len(p.pipables), timeout)
+	return WaitFor(e, len(p.pipables), timeout)
 }
 
-// Await errors forever
-func AwaitErrors(e chan error, count int) (bool, []error) {
+
+// Await first error
+func Await(e chan error, count int) error {
+	for i := 0; i < count; i++ {
+		select {
+		case err := <-e:
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Await completion, or first error
+func Wait(e chan error, count int) error {
+	for i := 0; i < count; i++ {
+		select {
+		case err := <-e:
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+
+// Await completion or error, for a duration
+func WaitFor(e chan error, count int, timeout time.Duration) error {
+	for i := 0; i < count; i++ {
+		select {
+		//todo offset timeout against time already spent in previous iterations
+		case <-time.After(timeout):
+			return errors.New("Timeout!")
+		case err := <-e:
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// Await all errors forever
+func AwaitAllErrors(e chan error, count int) (bool, []error) {
 	errs := []error{}
 	ok := true
 	for i := 0; i < count; i++ {
@@ -191,7 +235,7 @@ func AwaitErrors(e chan error, count int) (bool, []error) {
 }
 
 // Await Errors for a duration
-func AwaitErrorsFor(e chan error, count int, timeout time.Duration) (bool, []error) {
+func AwaitAllErrorsFor(e chan error, count int, timeout time.Duration) (bool, []error) {
 	errs := []error{}
 	ok := true
 	for i := 0; i < count; i++ {
