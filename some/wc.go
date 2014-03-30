@@ -153,7 +153,7 @@ func NewWc() *SomeWc {
 	return new(SomeWc)
 }
 
-// Fluent factory for *SomeWc
+// Factory for *SomeWc
 func Wc(args ...string) *SomeWc {
 	wc := NewWc()
 	wc.args = args

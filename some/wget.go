@@ -58,7 +58,7 @@ func NewWget() *SomeWget {
 	return new(SomeWget)
 }
 
-// Fluent factory for *SomeWget
+// Factory for *SomeWget
 func Wget(args ...string) *SomeWget {
 	w := NewWget()
 	w.args = args

@@ -123,7 +123,7 @@ func NewMv() *SomeMv {
 	return new(SomeMv)
 }
 
-// Fluent factory for *SomeMv
+// Factory for *SomeMv
 func Mv(args ...string) *SomeMv {
 	mv := NewMv()
 	mv.srcGlobs = args[0 : len(args)-1]

@@ -8,14 +8,12 @@ import (
 	"testing"
 )
 
-func Test{{.NameUCF}}(t *testing.T) {
-	var out bytes.Buffer
-	var errout bytes.Buffer
-	pipes := someutils.NewPipes(strings.NewReader("some/text"), &out, &errout)
-	{{.Name}} := New{{.NameUCF}}()
-	err := {{.Name}}.Exec(pipes)
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+func Test{{.NameUCF}}Pipeline(t *testing.T) {
+	p, out, errout := someutils.NewPipelineFromString("Hi\nHo\nhI\nhO\n")
+	ok, errs := p.PipeAndWait(1, {{.NameUCF}}("H", "O"))
+	if !ok {
+		t.Logf("Errors: %d, %+v\n", len(errs), errs)
+		t.Logf("Errout: %+v\n", errout.String())
 	}
 	println(out.String())
 	// TODO: 'Output' string for testing?

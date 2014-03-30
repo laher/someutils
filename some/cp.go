@@ -183,7 +183,7 @@ func NewCp() *SomeCp {
 	return new(SomeCp)
 }
 
-// Fluent factory for *SomeCp
+// Factory for *SomeCp
 func Cp(args ...string) *SomeCp {
 	cp := NewCp()
 	cp.SrcGlobs = args[0 : len(args)-1]

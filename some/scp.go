@@ -61,7 +61,7 @@ func NewScp() *SomeScp {
 	return new(SomeScp)
 }
 
-// Fluent factory for *SomeScp
+// Factory for *SomeScp
 func Scp(args ...string) *SomeScp {
 	s := NewScp()
 	s.args = args

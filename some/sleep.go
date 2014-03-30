@@ -81,7 +81,7 @@ func NewSleep() *SomeSleep {
 	return new(SomeSleep)
 }
 
-// Fluent factory for *SomeSleep
+// Factory for *SomeSleep
 func Sleep(amount int, unit string) *SomeSleep {
 	sleep := NewSleep()
 	sleep.unit = unit

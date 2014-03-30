@@ -2,7 +2,6 @@ package some
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/laher/someutils"
 	"io"
 	"strings"
@@ -16,7 +15,7 @@ func TestTrCli(t *testing.T) {
 	//inPipe, outPipe, errPipe := (strings.NewReader("HI"), &out, &errout)
 	err := TrCli([]string{"tr", "I", "O"})
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		t.Errorf("Error: %v\n", err)
 	}
 	//println(out.String())
 }
@@ -27,9 +26,9 @@ func TestFluentTr(t *testing.T) {
 	inPipe, outPipe, errPipe := strings.NewReader("HI"), &out, &errout
 	err := Tr("I", "O").Exec(inPipe, outPipe, errPipe)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		t.Errorf("Error: %v\n", err)
 	}
-	println(out.String())
+	t.Log(out.String())
 }
 
 func Test2pipes(t *testing.T) {
@@ -49,19 +48,20 @@ func Test2pipes(t *testing.T) {
 	if output != expected {
 		t.Error("Expected ", expected, ", got ", output)
 	}
-	fmt.Printf("Errout: %+v\n", errout.String())
+	t.Logf("Errout: %+v\n", errout.String())
 }
 
-func TestPipeline(t *testing.T) {
+func TestTrPipeline(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	p := someutils.Pipeline{in, &out, &errout, strings.NewReader("")}
-	e := p.Pipe(Tr("H", "O"), Tr("I", "J"))
-	ok, errs := someutils.CollectErrors(e, 2, 2)
-	if !ok || len(errs)>0 {
-		fmt.Printf("Errors: %d, %+v\n", len(errs), errs)
-		fmt.Printf("Errout: %+v\n", errout.String())
+	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"))
+	e := pipeline.Pipe(someutils.NewPipeset(in, &out, &errout))
+	ok, errs := someutils.AwaitErrors(e, 2)
+	if !ok {
+		t.Logf("Errors: %d, %+v\n", len(errs), errs)
+		t.Logf("Errout: %+v\n", errout.String())
+		t.Error("Unexpected errors")
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhJ\nhO\n"

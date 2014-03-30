@@ -103,7 +103,7 @@ func NewWhich() *SomeWhich {
 	return new(SomeWhich)
 }
 
-// Fluent factory for *SomeWhich
+// Factory for *SomeWhich
 func Which(args ...string) *SomeWhich {
 	which := NewWhich()
 	which.args = args

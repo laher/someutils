@@ -20,7 +20,7 @@ type SomeTr struct {
 	IsReplace    bool
 	set1         string
 	set2         string
-	inputs	     []*regexp.Regexp
+	inputs       []*regexp.Regexp
 	outputs      []string
 }
 
@@ -117,14 +117,14 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 
 func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	/*
-	inputs, err := convertSet1(tr.Set1)
-	if err != nil {
-		return err
-	}
-	outputs, err := convertSet2(tr.Set2)
-	if err != nil {
-		return err
-	}
+		inputs, err := convertSet1(tr.Set1)
+		if err != nil {
+			return err
+		}
+		outputs, err := convertSet2(tr.Set2)
+		if err != nil {
+			return err
+		}
 	*/
 	fu := func(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer, line []byte) error {
 		out := line
@@ -137,7 +137,7 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			}
 			out = reg.ReplaceAll(out, []byte(output))
 		}
-	//	fmt.Printf("From %v to %v\n", string(line), string(out))
+		//	fmt.Printf("From %v to %v\n", string(line), string(out))
 		_, err := fmt.Fprintln(outPipe, string(out))
 		return err
 	}

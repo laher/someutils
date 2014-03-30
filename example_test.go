@@ -1,11 +1,11 @@
 package someutils
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"time"
 )
 
 type ExampleUtil struct {
@@ -19,11 +19,10 @@ func (ex *ExampleUtil) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writ
 }
 
 func ExamplePipeline() {
-	var errout bytes.Buffer
-	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
-	p := NewPipeline(in, os.Stdout, &errout)
-	e := p.Pipe(&ExampleUtil{}, &ExampleUtil{})
-	ok, errs := CollectErrors(e, 2)
+	p := NewPipeline(&ExampleUtil{}, &ExampleUtil{})
+	pipes := NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), os.Stdout, os.Stderr)
+	e := p.Pipe(pipes)
+	ok, errs := AwaitErrorsFor(e, 2, 2 * time.Second)
 	if !ok {
 		fmt.Fprintln(os.Stderr, errs)
 	}

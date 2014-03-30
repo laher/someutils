@@ -90,7 +90,7 @@ func NewTouch() *SomeTouch {
 	return new(SomeTouch)
 }
 
-// Fluent factory for *SomeTouch
+// Factory for *SomeTouch
 func Touch(args ...string) *SomeTouch {
 	touch := NewTouch()
 	touch.args = args

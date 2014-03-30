@@ -114,7 +114,7 @@ func NewGzip() *SomeGzip {
 	return new(SomeGzip)
 }
 
-// Fluent factory for *SomeGzip
+// Factory for *SomeGzip
 func Gzip(args ...string) *SomeGzip {
 	gz := NewGzip()
 	gz.Filenames = args

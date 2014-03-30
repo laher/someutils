@@ -138,7 +138,7 @@ func NewLs() *SomeLs {
 	return new(SomeLs)
 }
 
-// Fluent factory for *SomeLs
+// Factory for *SomeLs
 func Ls(args ...string) *SomeLs {
 	ls := NewLs()
 	ls.globs = args

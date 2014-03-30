@@ -349,7 +349,7 @@ func NewTar() *SomeTar {
 	return new(SomeTar)
 }
 
-// Fluent factory for *SomeTar
+// Factory for *SomeTar
 func Tar(archiveFilename string, args ...string) *SomeTar {
 	tar := NewTar()
 	tar.ArchiveFilename = archiveFilename

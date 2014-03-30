@@ -149,7 +149,7 @@ func NewGunzip() *SomeGunzip {
 	return new(SomeGunzip)
 }
 
-// Fluent factory for *SomeGunzip
+// Factory for *SomeGunzip
 func Gunzip(args ...string) *SomeGunzip {
 	gunzip := NewGunzip()
 	gunzip.Filenames = args

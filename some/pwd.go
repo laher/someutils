@@ -61,7 +61,7 @@ func NewPwd() *SomePwd {
 	return new(SomePwd)
 }
 
-// Fluent factory for *SomePwd
+// Factory for *SomePwd
 func Pwd(args ...string) *SomePwd {
 	pwd := NewPwd()
 	return pwd

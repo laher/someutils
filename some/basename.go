@@ -69,7 +69,7 @@ func NewBasename() *SomeBasename {
 	return new(SomeBasename)
 }
 
-// Fluent factory for *SomeBasename
+// Factory for *SomeBasename
 func Basename(args ...string) *SomeBasename {
 	basename := NewBasename()
 	//basename.Xxx = args

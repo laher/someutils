@@ -211,7 +211,7 @@ func NewUnzip() *SomeUnzip {
 	return new(SomeUnzip)
 }
 
-// Fluent factory for *SomeUnzip
+// Factory for *SomeUnzip
 func Unzip(zipname string, files ...string) *SomeUnzip {
 	unzip := NewUnzip()
 	unzip.zipname = zipname

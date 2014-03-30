@@ -189,7 +189,7 @@ func NewGrep() *SomeGrep {
 	return new(SomeGrep)
 }
 
-// Fluent factory for *SomeGrep
+// Factory for *SomeGrep
 func Grep(args ...string) *SomeGrep {
 	grep := NewGrep()
 	grep.pattern = args[0]

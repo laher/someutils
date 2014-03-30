@@ -174,7 +174,7 @@ func NewTail() *SomeTail {
 	return new(SomeTail)
 }
 
-// Fluent factory for *SomeTail
+// Factory for *SomeTail
 func Tail(args ...string) *SomeTail {
 	tail := NewTail()
 	tail.Filenames = args

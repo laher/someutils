@@ -84,7 +84,7 @@ func NewTee() *SomeTee {
 	return new(SomeTee)
 }
 
-// Fluent factory for *SomeTee
+// Factory for *SomeTee
 func Tee(args ...string) *SomeTee {
 	tee := NewTee()
 	tee.args = args

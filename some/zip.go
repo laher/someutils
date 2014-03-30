@@ -163,7 +163,7 @@ func NewZip() *SomeZip {
 	return new(SomeZip)
 }
 
-// Fluent factory for *SomeZip
+// Factory for *SomeZip
 func Zip(args ...string) *SomeZip {
 	z := NewZip()
 	z.zipFilename = args[0]

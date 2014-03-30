@@ -101,7 +101,7 @@ func NewRm() *SomeRm {
 	return new(SomeRm)
 }
 
-// Fluent factory for *SomeRm
+// Factory for *SomeRm
 func Rm(args ...string) *SomeRm {
 	rm := NewRm()
 	rm.fileGlobs = args

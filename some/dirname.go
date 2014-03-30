@@ -55,7 +55,7 @@ func NewDirname() *SomeDirname {
 	return new(SomeDirname)
 }
 
-// Fluent factory for *SomeDirname
+// Factory for *SomeDirname
 func Dirname(args ...string) *SomeDirname {
 	dirname := NewDirname()
 	dirname.Filenames = args

@@ -94,7 +94,7 @@ func NewHead() *SomeHead {
 	return new(SomeHead)
 }
 
-// Fluent factory for *SomeHead
+// Factory for *SomeHead
 func Head(args ...string) *SomeHead {
 	head := NewHead()
 	head.Filenames = args

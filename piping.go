@@ -10,48 +10,61 @@ import (
 	"strings"
 	"time"
 )
+
+// Convenience method returns the Stdin/Stdout/Stderr pipes associated with this process
 func StdPipes() (io.Reader, io.Writer, io.Writer) {
 	return os.Stdin, os.Stdout, os.Stderr
 }
 
-type Pipeline struct {
-	InPipe  io.Reader
-	OutPipe io.Writer
-	ErrPipe io.Writer
+// A set of pipes (In, Out, ErrOut, and even ErrIn (but ErrIn is usually only used by the special 'Redirector' util)
+// Note that Pipables are not expected to use this type (Pipables should not need any dependency on someutils - just the implicit implementation of the Pipable interface)
+type Pipeset struct {
+	InPipe    io.Reader
+	OutPipe   io.Writer
+	ErrOutPipe   io.Writer
 	ErrInPipe io.Reader
 }
 
-func NewStdPipeline() *Pipeline {
-	br := new(bytes.Reader)
-	return &Pipeline{os.Stdin, os.Stdout, os.Stderr, br}
+// Chains together the input/output of utils in a 'pipeline'
+type Pipeline struct {
+	pipables []Pipable
 }
-func NewPipeline(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) *Pipeline {
+
+// Factory for a pipeline using STDIN/STDOUT/STDERR
+func NewStdPipeset() *Pipeset {
+	//use a bytes.Reader
 	br := new(bytes.Reader)
-	return &Pipeline{inPipe, outPipe, errPipe, br}
+	return &Pipeset{os.Stdin, os.Stdout, os.Stderr, br}
 }
-func NewPipelineFromString(input string) (*Pipeline, *bytes.Buffer, *bytes.Buffer) {
+
+// Factory for a pipeline with the given pipes
+func NewPipeset(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) *Pipeset {
+	br := new(bytes.Reader)
+	return &Pipeset{inPipe, outPipe, errPipe, br}
+}
+
+// Factory taking a string for Stdin, and using byte buffers for the sdout and stderr pipes
+// This returns the byte buffers to avoid the need to cast. (The assumption being that you'll want to call .Bytes() or .String() on those buffers)
+func NewPipesetFromString(input string) (*Pipeset, *bytes.Buffer, *bytes.Buffer) {
 	var outPipe bytes.Buffer
 	var errPipe bytes.Buffer
 	br := new(bytes.Reader)
-	return &Pipeline{strings.NewReader(input), &outPipe, &errPipe, br}, &outPipe, &errPipe
+	return &Pipeset{strings.NewReader(input), &outPipe, &errPipe, br}, &outPipe, &errPipe
 }
 
-func runAsync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe io.Writer, errInPipe io.Reader, closers []io.Closer, e chan error) {
-	_, willRedirectErrIn := pipable.(WillRedirectErrIn)
-	if willRedirectErrIn {
-		go  func() {
-			j, err := io.Copy(outPipe, errInPipe)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Error! copying errInPipe to outPipe", err)
-			}
-//			if j > 0 {
-				fmt.Fprintln(os.Stderr, "Finished copying errInPipe to outPipe", j)
-//			}
-		}()
+func NewPipeline(pipables ...Pipable) *Pipeline {
+	return &Pipeline{pipables}
+}
 
+
+// Run a Pipable asynchronously (using a goroutine)
+func runAsync(pipable Pipable, pipes *Pipeset, closers []io.Closer, e chan error) {
+	rei, willRedirectErrIn := pipable.(WillRedirectErrIn)
+	if willRedirectErrIn {
+		rei.SetErrIn(pipes.ErrInPipe)
 	} else {
-		go  func() {
-			j, err := io.Copy(errOutPipe, errInPipe)
+		go func() {
+			j, err := io.Copy(pipes.ErrOutPipe, pipes.ErrInPipe)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "Error! copying errInPipe to errOutPipe", err)
 			}
@@ -61,77 +74,22 @@ func runAsync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe i
 		}()
 	}
 	go func() {
-	e <- runSync(pipable, inPipe, outPipe, errOutPipe, errInPipe, closers)
+		e <- runSynchronous(pipable, pipes, closers)
 	}()
 }
-func runSync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe io.Writer, errInPipe io.Reader, closers []io.Closer) error {
-	//_, willRedirectErrIn := pipable.(WillRedirectErrIn)
-		//var locErrOutPipe io.Writer
-	errSent := false
-	/*
-	var myInPipe io.Reader
-	//var myOutPipe io.Writer
-	//var myErrOutPipe io.Writer
-	//bb, isBb := errOutPipe.(*bytes.Buffer)
-	//if isBb {
-		//prevErrOutput := bb.String()
-		//r := strings.NewReader(prevErrOutput)
-		//println("prev errOut: "+prevErrOutput)
-	//}
 
-	//myErrOutPipe := new(bytes.Buffer)
-	if willRedirectErrIn {
-		println("Running a WillRedirectErrIn")
-		/*
-		bb, isBb := (*errOutPipe).(*bytes.Buffer)
-		if isBb {
-			//prevErrOutput := bb.String()
-			//r := strings.NewReader(prevErrOutput)
-			//println("prev errOut: "+prevErrOutput)
-			//bb.Truncate(0)
-			//redirector.SetErrIn(r)
-			//bb := bb.Read(0)
-			//myInPipe = bytes.NewReader(bb.Bytes())
-			//bb.Reset()
-			// use a new writer
-		} else {
-			//Aargh.
-			println("ERRRO")
-			fmt.Fprintln(os.Stderr, "errPipe Not readable!")
-		}
-		* /
-		myInPipe = errInPipe
-	//	myOutPipe = outPipe
-	} else {
-		myInPipe = inPipe
-	//	myOutPipe = outPipe
-		//myErrOutPipe = errOutPipe
-/*		go func() {
-			i, err := io.Copy(errOutPipe, myErrOutPipe)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "Error! copying errInPipe to errOutPipe", e)
-			}
-			fmt.Fprintln(os.Stderr, "Finished copying errInPipe to errOutPipe", i)
-		}()
-		* /
-	}
-	*/
+// run a Pipable inline
+func runSynchronous(pipable Pipable, pipes *Pipeset, closers []io.Closer) error {
+	errSent := false
 	if !errSent {
-		err := pipable.Exec(inPipe, outPipe, errOutPipe)
+		err := pipable.Exec(pipes.InPipe, pipes.OutPipe, pipes.ErrOutPipe)
 		if err != nil {
 			return err
 		}
-		//fmt.Fprintln(os.Stderr, "Ran pipable.Exec")
-		/*
-		bb, isBb := errOutPipe.(*bytes.Buffer)
-		if isBb {
-			println("ErrOut: ", bb.String())
-		}
-*/
 	} else {
 		//TODO show this has not run
-		
-		fmt.Fprintln(os.Stderr, "Could not run Exec")
+		fmt.Fprintln(os.Stderr, "Could not run pipable.Exec")
+		return errors.New("Could not run pipable.Exec")
 	}
 	var err error
 	for _, closer := range closers {
@@ -139,92 +97,106 @@ func runSync(pipable Pipable, inPipe io.Reader, outPipe io.Writer, errOutPipe io
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Close error ", err)
 			if !errSent {
-		//		return err
+				//		return err
 			}
 		}
 	}
 	if !errSent {
-		//e <- nil
 		return err
 	}
 	return nil
 }
 
-func (p *Pipeline) Pipe(pipables ...Pipable) chan error {
+// Run pipables in a sequence, weaving together their inputs and outputs appropriately
+func (p *Pipeline) Pipe(pipes *Pipeset) chan error {
 	e := make(chan error)
 	var previousReader *io.ReadCloser
 	var previousErrReader *io.ReadCloser
 	//fmt.Printf("%+v\n", pipables)
-	for i, pipable := range pipables {
+	for i, pipable := range p.pipables {
 		//println(pipable)
 		var w io.WriteCloser
 		var r io.ReadCloser
 		var wErr io.WriteCloser
 		var rErr io.ReadCloser
-		var locInPipe io.Reader
-		var locOutPipe io.Writer
-		var locErrInPipe io.Reader
-		var locErrOutPipe io.Writer
+		locpipes := new(Pipeset)
 		closers := []io.Closer{}
 		if i == 0 {
-			locInPipe = p.InPipe
-			locErrInPipe = p.ErrInPipe
+			locpipes.InPipe = pipes.InPipe
+			locpipes.ErrInPipe = pipes.ErrInPipe
 		} else {
-			locInPipe = *previousReader
-			locErrInPipe = *previousErrReader
+			locpipes.InPipe = *previousReader
+			locpipes.ErrInPipe = *previousErrReader
 		}
-		if i == len(pipables)-1 {
-			locOutPipe = p.OutPipe
-			locErrOutPipe = p.ErrPipe
+		if i == len(p.pipables)-1 {
+			locpipes.OutPipe = pipes.OutPipe
+
+			outCloser, isCloser := locpipes.OutPipe.(io.Closer)
+			if isCloser {
+				closers = append(closers, outCloser)
+			}
+			locpipes.ErrOutPipe = pipes.ErrOutPipe
+			errOutCloser, isCloser := locpipes.ErrOutPipe.(io.Closer)
+			if isCloser {
+				closers = append(closers, errOutCloser)
+			}
 		} else {
 			r, w = io.Pipe()
-			locOutPipe = w
+			locpipes.OutPipe = w
 			closers = append(closers, w)
 
 			rErr, wErr = io.Pipe()
-			locErrOutPipe = wErr
+			locpipes.ErrOutPipe = wErr
 			closers = append(closers, wErr)
 		}
-		//locErrOutPipe = &p.ErrPipe
-
-/*
-		bb, isBb := p.ErrPipe.(*bytes.Buffer)
-		if isBb {
-			//bytes of errPipe
-			locErrInPipe = bytes.NewReader(bb.Bytes())
-		} else {
-			//nothing
-			locErrInPipe = new(bytes.Buffer)
-		}
-		*/
-		//go  func() {
-			
-			//println(pipable)
-		runAsync(pipable, locInPipe, locOutPipe, locErrOutPipe, locErrInPipe, closers, e)
-
-		//}()
+		runAsync(pipable, locpipes, closers, e)
 		previousReader = &r
 		previousErrReader = &rErr
 	}
 	return e
 }
 
+// Intended as a subtype for Pipable which can redirect the error output of the previous command. This is treated as a special case because commands do not typically have access to this.
 type WillRedirectErrIn interface {
 	SetErrIn(errInPipe io.Reader)
-
 }
 
-func (p *Pipeline) PipeAndWait(timeoutSec time.Duration, pipables ...Pipable) (bool, []error) {
-	e := p.Pipe(pipables...)
-	return CollectErrors(e, len(pipables), timeoutSec)
+// Pipe and wait for errors (up until a timeout occurs)
+func (p *Pipeline) PipeAndWait(pipes *Pipeset) (bool, []error) {
+	e := p.Pipe(pipes)
+	return AwaitErrors(e, len(p.pipables))
 }
 
-func CollectErrors(e chan error, count int, timeoutSec time.Duration) (bool, []error) {
+
+// Pipe and wait for errors (up until a timeout occurs)
+func (p *Pipeline) PipeAndWaitFor(pipes *Pipeset, timeout time.Duration) (bool, []error) {
+	e := p.Pipe(pipes)
+	return AwaitErrorsFor(e, len(p.pipables), timeout)
+}
+
+// Await errors forever
+func AwaitErrors(e chan error, count int) (bool, []error) {
 	errs := []error{}
 	ok := true
 	for i := 0; i < count; i++ {
 		select {
-		case <-time.After(timeoutSec*time.Second):
+		case err := <-e:
+			if err != nil {
+				ok = false
+			}
+			errs = append(errs, err)
+		}
+	}
+	return ok, errs
+}
+
+// Await Errors for a duration
+func AwaitErrorsFor(e chan error, count int, timeout time.Duration) (bool, []error) {
+	errs := []error{}
+	ok := true
+	for i := 0; i < count; i++ {
+		select {
+		case <-time.After(timeout):
 			errs = append(errs, errors.New("Timeout!"))
 			return false, errs
 		case err := <-e:
@@ -237,8 +209,10 @@ func CollectErrors(e chan error, count int, timeoutSec time.Duration) (bool, []e
 	return ok, errs
 }
 
+// A function which processses a line from a reader
 type LineProcessorFunc func(io.Reader, io.Writer, io.Writer, []byte) error
 
+// Process line-by-line
 func LineProcessor(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer, fu LineProcessorFunc) error {
 	reader := bufio.NewReader(inPipe)
 	for {
