@@ -58,7 +58,7 @@ func NewPipeline(pipables ...Pipable) *Pipeline {
 
 
 // Run a Pipable asynchronously (using a goroutine)
-func runAsync(pipable Pipable, pipes *Pipeset, closers []io.Closer, e chan error) {
+func execAsync(pipable Pipable, pipes *Pipeset, closers []io.Closer, e chan error) {
 	rei, willRedirectErrIn := pipable.(WillRedirectErrIn)
 	if willRedirectErrIn {
 		rei.SetErrIn(pipes.ErrInPipe)
@@ -74,12 +74,12 @@ func runAsync(pipable Pipable, pipes *Pipeset, closers []io.Closer, e chan error
 		}()
 	}
 	go func() {
-		e <- runSynchronous(pipable, pipes, closers)
+		e <- execSynchronous(pipable, pipes, closers)
 	}()
 }
 
 // run a Pipable inline
-func runSynchronous(pipable Pipable, pipes *Pipeset, closers []io.Closer) error {
+func execSynchronous(pipable Pipable, pipes *Pipeset, closers []io.Closer) error {
 	errSent := false
 	if !errSent {
 		err := pipable.Exec(pipes.InPipe, pipes.OutPipe, pipes.ErrOutPipe)
@@ -108,7 +108,7 @@ func runSynchronous(pipable Pipable, pipes *Pipeset, closers []io.Closer) error 
 }
 
 // Run pipables in a sequence, weaving together their inputs and outputs appropriately
-func (p *Pipeline) Pipe(pipes *Pipeset) chan error {
+func (p *Pipeline) Exec(pipes *Pipeset) chan error {
 	e := make(chan error)
 	var previousReader *io.ReadCloser
 	var previousErrReader *io.ReadCloser
@@ -149,7 +149,7 @@ func (p *Pipeline) Pipe(pipes *Pipeset) chan error {
 			locpipes.ErrOutPipe = wErr
 			closers = append(closers, wErr)
 		}
-		runAsync(pipable, locpipes, closers, e)
+		execAsync(pipable, locpipes, closers, e)
 		previousReader = &r
 		previousErrReader = &rErr
 	}
@@ -162,15 +162,15 @@ type WillRedirectErrIn interface {
 }
 
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) PipeAndWait(pipes *Pipeset) error {
-	e := p.Pipe(pipes)
+func (p *Pipeline) ExecAndWait(pipes *Pipeset) error {
+	e := p.Exec(pipes)
 	return Wait(e, len(p.pipables))
 }
 
 
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) PipeAndWaitFor(pipes *Pipeset, timeout time.Duration) error {
-	e := p.Pipe(pipes)
+func (p *Pipeline) ExecAndWaitFor(pipes *Pipeset, timeout time.Duration) error {
+	e := p.Exec(pipes)
 	return WaitFor(e, len(p.pipables), timeout)
 }
 

@@ -56,7 +56,7 @@ func TestTrPipeline(t *testing.T) {
 	var errout bytes.Buffer
 	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"))
-	e := pipeline.Pipe(someutils.NewPipeset(in, &out, &errout))
+	e := pipeline.Exec(someutils.NewPipeset(in, &out, &errout))
 	err := someutils.Wait(e, 2)
 	if err != nil {
 		t.Logf("Errors: %+v\n", err)

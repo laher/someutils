@@ -21,7 +21,7 @@ func (ex *ExampleUtil) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writ
 func ExamplePipeline() {
 	p := NewPipeline(&ExampleUtil{}, &ExampleUtil{})
 	pipes := NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), os.Stdout, os.Stderr)
-	e := p.Pipe(pipes)
+	e := p.Exec(pipes)
 	err := WaitFor(e, 2, 2 * time.Second)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)

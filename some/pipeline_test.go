@@ -11,7 +11,7 @@ import (
 func TestPipeline1(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O")) //, RedirectTo("file.txt"))
-	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	err := pipeline.ExecAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
@@ -27,7 +27,7 @@ func TestPipeline1(t *testing.T) {
 func TestPipeline2(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"))
-	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	err := pipeline.ExecAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
@@ -45,7 +45,7 @@ func TestPipeline2(t *testing.T) {
 func TestRedirect1(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutTo("test.txt"), Cat("test.txt"))
-	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	err := pipeline.ExecAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
@@ -61,7 +61,7 @@ func TestRedirect1(t *testing.T) {
 func TestRedirectOutErr(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr())
-	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	err := pipeline.ExecAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
@@ -79,7 +79,7 @@ func TestRedirectOutErr(t *testing.T) {
 func TestRedirectOutNull(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToNull())
-	err := pipeline.PipeAndWaitFor(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout), 1 * time.Second)
+	err := pipeline.ExecAndWaitFor(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout), 1 * time.Second)
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
@@ -97,7 +97,7 @@ func TestRedirectOutNull(t *testing.T) {
 func TestRedirectOutErrErrOut(t *testing.T) {
 	var out, errout bytes.Buffer
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr(), ErrToOut())
-	err := pipeline.PipeAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
+	err := pipeline.ExecAndWait(someutils.NewPipeset(strings.NewReader("Hi\nHo\nhI\nhO\n"), &out, &errout))
 	if err!=nil {
 		t.Logf("Errout: %+v\n", errout.String())
 		t.Logf("Stdout: %+v", out.String())
