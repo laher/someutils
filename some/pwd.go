@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewPwd() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewPwd() })
 }
 
 // SomePwd represents and performs a `pwd` invocation

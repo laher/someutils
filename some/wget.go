@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewWget() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewWget() })
 }
 
 // SomeWget represents and performs a `wget` invocation

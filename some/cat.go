@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewCat() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewCat() })
 }
 
 // SomeCat represents and performs a `cat` invocation

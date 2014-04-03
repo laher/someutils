@@ -12,13 +12,11 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewZip() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewZip() })
 }
 
 // SomeZip represents and performs a `zip` invocation
 type SomeZip struct {
-	// TODO: add members here
-
 	zipFilename string
 	items       []string
 }
@@ -28,14 +26,10 @@ func (z *SomeZip) Name() string {
 	return "zip"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
 func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
-
-	// TODO add flags here
 
 	err := flagSet.Parse(call[1:])
 	if err != nil {
@@ -54,13 +48,11 @@ func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
 	}
 	z.zipFilename = args[0]
 	z.items = args[1:]
-	// TODO: validate and process flagSet.Args()
 	return nil
 }
 
 // Exec actually performs the zip
 func (z *SomeZip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
-	//TODO do something here!
 	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {
 		return err

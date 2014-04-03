@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewLs() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewLs() })
 }
 
 // SomeLs represents and performs a `ls` invocation
@@ -62,14 +62,13 @@ func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-
-	// TODO: validate and process flagSet.Args()
+	//fmt.Fprintf(errPipe, "ls args: %+v\n", flagSet.Args())
+	ls.globs = flagSet.Args()
 	return nil
 }
 
 // Exec actually performs the ls
 func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
-	//TODO do something here!
 	out := tabwriter.NewWriter(outPipe, 4, 4, 1, ' ', 0)
 	args, err := getDirList(ls.globs, ls, inPipe, outPipe, errPipe)
 	if err != nil {
@@ -136,6 +135,10 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 // Factory for *SomeLs
 func NewLs() *SomeLs {
 	return new(SomeLs)
+}
+
+func LsFactory() someutils.PipableCliUtil {
+	return NewLs()
 }
 
 // Factory for *SomeLs

@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewTr() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTr() })
 }
 
 type SomeTr struct {

@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewTee() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTee() })
 }
 
 // SomeTee represents and performs a `tee` invocation

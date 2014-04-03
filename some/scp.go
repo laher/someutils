@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewScp() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewScp() })
 }
 
 // SomeScp represents and performs a `scp` invocation

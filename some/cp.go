@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewCp() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewCp() })
 }
 
 // SomeCp represents and performs a `cp` invocation

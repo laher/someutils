@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewGrep() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewGrep() })
 }
 
 // SomeGrep represents and performs a `grep` invocation

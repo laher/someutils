@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewBasename() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewBasename() })
 }
 
 // SomeBasename represents and performs a `basename` invocation

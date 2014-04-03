@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSome(func() someutils.PipableCliUtil { return New{{.NameUCF}}() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return New{{.NameUCF}}() })
 }
 
 // Some{{.NameUCF}} represents and performs a `{{.Name}}` invocation

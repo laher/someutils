@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.PipableCliUtil { return NewWhich() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return NewWhich() })
 }
 
 // SomeWhich represents and performs a `which` invocation

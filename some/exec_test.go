@@ -17,6 +17,6 @@ func TestExecPipeline(t *testing.T) {
 		t.Logf("Error:: %+v\n", err)
 		t.Logf("Errout: %+v\n", errout.String())
 	}
-	println(out.String())
+	//println(out.String())
 	// TODO: 'Output' string for testing?
 }
