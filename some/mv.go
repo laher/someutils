@@ -26,21 +26,13 @@ func (mv *SomeMv) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) error {
+func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("mv", "[options] [src...] [dest]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 
-	// TODO add flags here
-
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 
 	args := flagSet.Args()
@@ -48,35 +40,35 @@ func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) error {
 	if len(args) < 2 {
 		fmt.Fprintf(errPipe, "Error: not enough arguments\n\n")
 		flagSet.Usage()
-		return errors.New("Not enough arguments")
+		return errors.New("Not enough arguments"), 1
 	}
 
 	mv.srcGlobs = args[0 : len(args)-1]
 	mv.dest = args[len(args)-1]
 
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the mv
-func (mv *SomeMv) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (mv *SomeMv) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	for _, srcGlob := range mv.srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
-			return err
+			return err, 1
 		}
 		if len(srces) < 1 {
-			return errors.New(fmt.Sprintf("Source glob '%s' does not match any files\n", srcGlob))
+			return errors.New(fmt.Sprintf("Source glob '%s' does not match any files\n", srcGlob)), 1
 		}
 
 		for _, src := range srces {
 			err = moveFile(src, mv.dest)
 			if err != nil {
 				fmt.Fprintf(errPipe, "Error %v\n", err)
-				return err
+				return err, 1
 			}
 		}
 	}
-	return nil
+	return nil, 0
 
 }
 
@@ -132,12 +124,12 @@ func Mv(args ...string) *SomeMv {
 }
 
 // CLI invocation for *SomeMv
-func MvCli(call []string) error {
+func MvCli(call []string) (error, int) {
 	mv := NewMv()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := mv.ParseFlags(call, errPipe)
+	err, code := mv.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return mv.Exec(inPipe, outPipe, errPipe)
 }

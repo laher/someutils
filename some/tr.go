@@ -27,35 +27,32 @@ type SomeTr struct {
 func (tr *SomeTr) Name() string {
 	return "tr"
 }
-func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) error {
+func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("tr", "[OPTION]... SET1 [SET2]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 	flagSet.AliasedBoolVar(&tr.IsDelete, []string{"d", "delete"}, false, "Delete characters in SET1, do not translate")
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		return err
-	}
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	sets := flagSet.Args()
 	if len(sets) > 0 {
 		err = tr.SetSet1(sets[0])
 		if err != nil {
-			return err
+			return err, 1
 		}
 	} else {
-		return errors.New("Not enough args supplied")
+		return errors.New("Not enough args supplied"), 1
 	}
 	if len(sets) > 1 {
 		err = tr.SetSet2(sets[1])
 		if err != nil {
-			return err
+			return err, 1
 		}
 	} else if !tr.IsDelete && !tr.IsComplement {
-		return errors.New("Not enough args supplied")
+		return errors.New("Not enough args supplied"), 1
 	}
-	return nil
+	return nil, 0
 }
 
 func (tr *SomeTr) SetSet1(set1 string) error {
@@ -73,6 +70,7 @@ func (tr *SomeTr) SetSet2(set2 string) error {
 	return err
 }
 
+//TODO fix behaviour of set1/set2 relationship
 func convertSet2(set2 string) ([]string, error) {
 	if strings.Contains(set2, "-") {
 		parts := strings.Split(set2, "-")
@@ -115,7 +113,7 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 	return inputs, nil
 }
 
-func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	/*
 		inputs, err := convertSet1(tr.Set1)
 		if err != nil {
@@ -126,8 +124,9 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			return err
 		}
 	*/
-	fu := func(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer, line []byte) error {
-		out := line
+	fu := func(inPipe io.Reader, outPipe2 io.Writer, errPipe io.Writer, line []byte) error {
+		//println("tr processing line")
+		out := string(line)
 		for i, reg := range tr.inputs {
 			var output string
 			if len(tr.outputs) > i {
@@ -135,16 +134,22 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			} else {
 				output = tr.outputs[len(tr.outputs)-1]
 			}
-			out = reg.ReplaceAll(out, []byte(output))
+			out = reg.ReplaceAllString(out, output)
 		}
 		//	fmt.Printf("From %v to %v\n", string(line), string(out))
-		_, err := fmt.Fprintln(outPipe, string(out))
+		//println("tr printing line: |", out, "|")
+		_, err := fmt.Fprintln(outPipe2, out)
+		//println("tr processed line")
 		return err
 	}
 	//fmt.Printf("from %v\n", tr.inputs)
 	//fmt.Printf("to %v\n", tr.outputs)
 
-	return someutils.LineProcessor(inPipe, outPipe, errPipe, fu)
+	err := someutils.LineProcessor(inPipe, outPipe, errPipe, fu)
+	if err != nil {
+		return err, 1
+	}
+	return nil, 0
 }
 
 func NewTr() *SomeTr {
@@ -169,12 +174,12 @@ func TrC(set1 string) *SomeTr {
 	return tr
 }
 
-func TrCli(call []string) error {
+func TrCli(call []string) (error, int) {
 	tr := NewTr()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := tr.ParseFlags(call, errPipe)
+	err, code := tr.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return tr.Exec(inPipe, outPipe, errPipe)
 }

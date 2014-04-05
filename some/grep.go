@@ -40,10 +40,8 @@ func (grep *SomeGrep) Name() string {
 	return "grep"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) error {
+func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("grep", "[options] PATTERN [files...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&grep.IsPerl, []string{"P", "perl-regexp"}, false, "Perl-style regex")
@@ -55,21 +53,14 @@ func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) error {
 	// disable for now
 	//	flagSet.AliasedBoolVar(&grep.IsRecurse, []string{"r", "recurse"}, false, "recurse into subdirectories")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
+		return err, code
 	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
-
 	args := flagSet.Args()
 	if len(args) < 1 {
 		flagSet.Usage()
-		return errors.New("Not enough args")
+		return errors.New("Not enough args"), 1
 	}
 	grep.pattern = args[0]
 
@@ -79,37 +70,44 @@ func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) error {
 		grep.globs = []string{}
 	}
 
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the grep
-func (grep *SomeGrep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (grep *SomeGrep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	reg, err := compile(grep.pattern, grep)
 	if err != nil {
-		return err
+		return err, 1
 	}
 	if len(grep.globs) > 0 {
 		files := []string{}
 		for _, glob := range grep.globs {
 			results, err := filepath.Glob(glob)
 			if err != nil {
-				return err
+				return err, 1
 			}
 			if len(results) < 1 { //no match
-				return errors.New("grep: cannot access " + glob + ": No such file or directory")
+				return errors.New("grep: cannot access " + glob + ": No such file or directory"), 1
 			}
 			files = append(files, results...)
 		}
-		return grepAll(reg, files, grep, outPipe)
+		err = grepAll(reg, files, grep, outPipe)
+		if err != nil {
+			return err, 1
+		}
 	} else {
 		if uggo.IsPipingStdin() {
 			//check STDIN
-			return grepReader(inPipe, "", reg, grep, outPipe)
+			err = grepReader(inPipe, "", reg, grep, outPipe)
+			if err != nil {
+				return err, 1
+			}
 		} else {
 			//NOT piping.
-			return errors.New("Not enough args")
+			return errors.New("Not enough args"), 1
 		}
 	}
+	return nil, 0
 }
 
 func grepAll(reg *regexp.Regexp, files []string, grep *SomeGrep, out io.Writer) error {
@@ -202,12 +200,12 @@ func Grep(args ...string) *SomeGrep {
 }
 
 // CLI invocation for *SomeGrep
-func GrepCli(call []string) error {
+func GrepCli(call []string) (error, int) {
 	grep := NewGrep()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := grep.ParseFlags(call, errPipe)
+	err, code := grep.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return grep.Exec(inPipe, outPipe, errPipe)
 }

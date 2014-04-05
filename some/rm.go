@@ -26,43 +26,37 @@ func (rm *SomeRm) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (rm *SomeRm) ParseFlags(call []string, errPipe io.Writer) error {
+func (rm *SomeRm) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("rm", "[options] [files...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 
 	flagSet.BoolVar(&rm.IsRecursive, "r", false, "Recurse into directories")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 
 	rm.fileGlobs = flagSet.Args()
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the rm
-func (rm *SomeRm) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (rm *SomeRm) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	for _, fileGlob := range rm.fileGlobs {
 		files, err := filepath.Glob(fileGlob)
 		if err != nil {
-			return err
+			return err, 1
 		}
 		for _, file := range files {
-			e := delete(file, rm.IsRecursive)
-			if e != nil {
-				return e
+			err := delete(file, rm.IsRecursive)
+			if err != nil {
+				return err, 1
 			}
 		}
 	}
 
-	return nil
+	return nil, 0
 }
 
 func delete(file string, recursive bool) error {
@@ -109,12 +103,12 @@ func Rm(args ...string) *SomeRm {
 }
 
 // CLI invocation for *SomeRm
-func RmCli(call []string) error {
+func RmCli(call []string) (error, int) {
 	rm := NewRm()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := rm.ParseFlags(call, errPipe)
+	err, code := rm.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return rm.Exec(inPipe, outPipe, errPipe)
 }

@@ -24,54 +24,49 @@ func (head *SomeHead) Name() string {
 	return "head"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (head *SomeHead) ParseFlags(call []string, errPipe io.Writer) error {
+func (head *SomeHead) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("head", "[options] [args...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 
 	flagSet.AliasedIntVar(&head.lines, []string{"n", "lines"}, 10, "number of lines to print")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	//could be nil
 	head.Filenames = flagSet.Args()
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the head
-func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	//TODO do something here!
 	if len(head.Filenames) > 0 {
 		for _, fileName := range head.Filenames {
 			file, err := os.Open(fileName)
 			if err != nil {
-				return err
+				return err, 1
 			}
 			err = headFile(file, head, outPipe)
 			if err != nil {
 				file.Close()
-				return err
+				return err, 1
 			}
 			err = file.Close()
 			if err != nil {
-				return err
+				return err, 1
 			}
 		}
-		return nil
 	} else {
 		//stdin ..
-		return headFile(inPipe, head, outPipe)
+		err := headFile(inPipe, head, outPipe)
+		if err != nil {
+			return err, 1
+		}
 	}
+	return nil, 0
 }
 
 func headFile(file io.Reader, head *SomeHead, out io.Writer) error {
@@ -95,19 +90,20 @@ func NewHead() *SomeHead {
 }
 
 // Factory for *SomeHead
-func Head(args ...string) *SomeHead {
+func Head(lines int, args ...string) *SomeHead {
 	head := NewHead()
+	head.lines = lines
 	head.Filenames = args
 	return head
 }
 
 // CLI invocation for *SomeHead
-func HeadCli(call []string) error {
+func HeadCli(call []string) (error, int) {
 	head := NewHead()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := head.ParseFlags(call, errPipe)
+	err, code := head.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return head.Exec(inPipe, outPipe, errPipe)
 }

@@ -41,7 +41,7 @@ func (ls *SomeLs) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) error {
+func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("ls", "[options] [dirs...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 
@@ -52,27 +52,21 @@ func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet.BoolVar(&ls.OnePerLine, "1", false, "One entry per line")
 	flagSet.AliasedBoolVar(&ls.Stdin, []string{"z", "stdin"}, false, "Read from stdin")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	//fmt.Fprintf(errPipe, "ls args: %+v\n", flagSet.Args())
 	ls.globs = flagSet.Args()
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the ls
-func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	out := tabwriter.NewWriter(outPipe, 4, 4, 1, ' ', 0)
 	args, err := getDirList(ls.globs, ls, inPipe, outPipe, errPipe)
 	if err != nil {
-		return err
+		return err, 1
 	}
 
 	counter := 0
@@ -83,7 +77,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			argInfo, err := os.Stat(arg)
 			if err != nil {
 				fmt.Fprintln(errPipe, "stat failed for ", arg)
-				return err
+				return err, 1
 			}
 			if argInfo.IsDir() {
 				if len(args) > 1 { //if more than one, print dir name before contents
@@ -115,7 +109,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 
 				err := list(out, errPipe, dir, "", ls, &counter)
 				if err != nil {
-					return err
+					return err, 1
 				}
 				if len(args) > 1 {
 					fmt.Fprintf(out, "\n")
@@ -128,7 +122,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 		}
 	}
 	out.Flush()
-	return nil
+	return nil, 0
 
 }
 
@@ -149,12 +143,12 @@ func Ls(args ...string) *SomeLs {
 }
 
 // CLI invocation for *SomeLs
-func LsCli(call []string) error {
+func LsCli(call []string) (error, int) {
 	ls := NewLs()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := ls.ParseFlags(call, errPipe)
+	err, code := ls.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return ls.Exec(inPipe, outPipe, errPipe)
 }

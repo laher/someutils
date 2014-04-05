@@ -15,7 +15,7 @@ type CliUtil interface {
 
 //a Pipable can be executed on a pipeline
 type Pipable interface {
-	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error
+	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int)
 }
 
 // a Named Pipable can be registered for use by e.g. xargs
@@ -27,7 +27,7 @@ type NamedPipable interface {
 //PipableUtil represents a util which can be initialized by flags & executed on a Pipeline
 type PipableCliUtil interface {
 	NamedPipable
-	ParseFlags(call []string, errOut io.Writer) error
+	ParseFlags(call []string, errOut io.Writer) (error, int)
 }
 
 type PipableFactory func() Pipable
@@ -84,15 +84,18 @@ func CliExists(name string) bool {
 }
 
 // deprecated. Use GetCliUtil, ParseFlags & Exec instead.
-func Call(name string, args []string) error {
+func Call(name string, args []string) (error, int) {
 	inPipe, outPipe, errPipe := StdPipes()
 	util := allCliUtils[name]
-	err := util.ParseFlags(args, errPipe)
+	return CallUtil(util, args, inPipe, outPipe, errPipe)
+}
+
+func CallUtil(util PipableCliUtil, args []string, inPipe io.Reader, outPipe, errPipe io.Writer) (error, int) {
+	err, code := util.ParseFlags(args, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
-	err = util.Exec(inPipe, outPipe, errPipe)
-	return err
+	return util.Exec(inPipe, outPipe, errPipe)
 }
 
 func PipableExists(name string) bool {

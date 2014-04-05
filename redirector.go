@@ -28,7 +28,7 @@ func (redirector *ErrPipeRedirector) SetErrIn(errInPipe io.Reader) {
 }
 
 // Exec actually performs the redirection
-func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if redirector.Filename != "" {
 		var fo io.WriteCloser
 		flag := os.O_CREATE | os.O_WRONLY
@@ -37,7 +37,7 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 		}
 		fo, err := os.OpenFile(redirector.Filename, flag, 0777)
 		if err != nil {
-			return err
+			return err, 1
 		}
 		defer fo.Close()
 		var rdr io.Reader
@@ -47,11 +47,15 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 			rdr = inPipe
 		}
 		_, err = io.Copy(fo, rdr)
-		if err != nil {
-			return err
+		if err == io.EOF || err == io.ErrClosedPipe {
+			// OK
+		} else if err != nil {
+			return err, 1
 		}
 		err = fo.Close()
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else {
 		var rdr io.Reader
 		var writer io.Writer
@@ -64,7 +68,10 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 		if redirector.isRedirectToErrPipe {
 			writer = errPipe
 		} else if redirector.isRedirectToNull {
-			writer = ioutil.Discard
+			//wrap Discard into an io.Pipe to ensure it is Closable
+			r, w := io.Pipe()
+			go io.Copy(ioutil.Discard, r)
+			writer = w
 		} else {
 			writer = outPipe
 		}
@@ -76,15 +83,20 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 		}
 
 		_, err := io.Copy(writer, rdr)
-		if err != nil {
-			return err
+		if err == io.EOF || err == io.ErrClosedPipe {
+			// OK
+		} else if err != nil {
+			return err, 1
 		}
 
 		if isCloser {
-			return closer.Close()
+			err = closer.Close()
+			if err != nil {
+				return err, 1
+			}
 		}
-		return nil
 	}
+	return nil, 0
 }
 
 // Factory for *PipeRedirector
@@ -108,9 +120,8 @@ func ErrTo(filename string) *PipeRedirector {
 }
 
 // Factory for redirecting 'out' pipe to Null (nowhere)
-func OutToNull() *ErrPipeRedirector {
-	redirector := new(ErrPipeRedirector)
-	redirector.isRedirectFromErrPipe = true
+func OutToNull() *PipeRedirector {
+	redirector := NewPipeRedirector()
 	redirector.isRedirectToNull = true
 	return redirector
 }

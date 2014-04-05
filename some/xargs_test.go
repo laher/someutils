@@ -12,11 +12,11 @@ func TestXargsPipeline(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
 	in := strings.NewReader(".\n..\n")
-	err := pipeline.ExecAndWait(someutils.NewPipeset(in, &out, &errout))
+	err, code, index := pipeline.ExecAndWait(someutils.NewPipeset(in, &out, &errout))
 	t.Logf("Out (length): %d\n", len(out.String()))
 	t.Logf("Errout: %+v\n", errout.String())
 	if err != nil {
-		t.Errorf("Error: %d\n", err)
+		t.Errorf("Error: %v, code: %d, index: %d\n", err, code, index)
 	}
 	// TODO: 'Output' string for testing?
 }

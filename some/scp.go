@@ -3,17 +3,14 @@
 package some
 
 import (
-	"fmt"
 	"github.com/laher/scp-go/scp"
 	"github.com/laher/someutils"
-	"github.com/laher/uggo"
-	"io"
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewScp() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new (scp.SecureCopier) })
 }
-
+/*
 // SomeScp represents and performs a `scp` invocation
 type SomeScp struct {
 	// TODO: add members here
@@ -78,3 +75,4 @@ func ScpCli(call []string) error {
 	}
 	return s.Exec(inPipe, outPipe, errPipe)
 }
+*/

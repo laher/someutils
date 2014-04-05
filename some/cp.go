@@ -2,7 +2,6 @@ package some
 
 import (
 	"errors"
-	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
@@ -27,53 +26,44 @@ func (cp *SomeCp) Name() string {
 	return "cp"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (cp *SomeCp) ParseFlags(call []string, errPipe io.Writer) error {
+func (cp *SomeCp) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("cp", "[options] [src...] [dest]", someutils.VERSION)
 	flagSet.AliasedBoolVar(&cp.IsRecursive, []string{"R", "r", "recursive"}, false, "Recurse into directories")
 	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
+		return err, code
 	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
-
 	args := flagSet.Args()
 	if len(args) < 2 {
 		flagSet.Usage()
-		return errors.New("Not enough args")
+		return errors.New("Not enough args"), 1
 	}
 
 	cp.SrcGlobs = args[0 : len(args)-1]
 	cp.Dest = args[len(args)-1]
 
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the cp
-func (cp *SomeCp) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (cp *SomeCp) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	for _, srcGlob := range cp.SrcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
-			return err
+			return err, 1
 		}
 		for _, src := range srces {
 			err = copyFile(src, cp.Dest, cp)
 			if err != nil {
-				return err
+				return err, 1
 			}
 		}
 	}
-	return nil
+	return nil, 0
 }
 
 func copyFile(src, dest string, cp *SomeCp) error {
@@ -192,12 +182,12 @@ func Cp(args ...string) *SomeCp {
 }
 
 // CLI invocation for *SomeCp
-func CpCli(call []string) error {
+func CpCli(call []string) (error, int) {
 	cp := NewCp()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := cp.ParseFlags(call, errPipe)
+	err, code := cp.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return cp.Exec(inPipe, outPipe, errPipe)
 }

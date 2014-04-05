@@ -26,10 +26,9 @@ func (wc *SomeWc) Name() string {
 	return "wc"
 }
 
-// TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) error {
+func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("wc", "[OPTION]... [FILE]...", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 
@@ -39,22 +38,17 @@ func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) error {
 	//	flagSet.AliasedBoolVar(&wc.IsChars, []string{"m", "chars"}, false, "Count characters")
 	flagSet.AliasedBoolVar(&wc.IsBytes, []string{"c", "bytes"}, false, "Count bytes")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
+		return err, code
 	}
 
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
 	wc.args = flagSet.Args()
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the wc
-func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if len(wc.args) > 0 {
 		//treat no args as all args
 		if !wc.IsWords && !wc.IsLines && !wc.IsBytes {
@@ -69,16 +63,16 @@ func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			//get byte count
 			file, err := os.Open(fileName)
 			if err != nil {
-				return err
+				return err, 1
 			}
 			err = countWords(file, wc, &bytes, &words, &lines)
 			if err != nil {
 				file.Close()
-				return err
+				return err, 1
 			}
 			err = file.Close()
 			if err != nil {
-				return err
+				return err, 1
 			}
 			if wc.IsWords && !wc.IsLines && !wc.IsBytes {
 				fmt.Fprintf(outPipe, "%d %s\n", words, fileName)
@@ -100,7 +94,7 @@ func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 		lines := int64(0)
 		err := countWords(inPipe, wc, &bytes, &words, &lines)
 		if err != nil {
-			return err
+			return err, 1
 		}
 		if wc.IsWords && !wc.IsLines && !wc.IsBytes {
 			fmt.Fprintf(outPipe, "%d\n", words)
@@ -112,7 +106,7 @@ func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 			fmt.Fprintf(outPipe, "%d %d %d\n", lines, words, bytes)
 		}
 	}
-	return nil
+	return nil, 0
 
 }
 
@@ -161,12 +155,12 @@ func Wc(args ...string) *SomeWc {
 }
 
 // CLI invocation for *SomeWc
-func WcCli(call []string) error {
+func WcCli(call []string) (error, int) {
 	wc := NewWc()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := wc.ParseFlags(call, errPipe)
+	err, code := wc.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return wc.Exec(inPipe, outPipe, errPipe)
 }

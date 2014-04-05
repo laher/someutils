@@ -26,21 +26,15 @@ func (basename *SomeBasename) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) error {
+func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("basename", "", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	if len(flagSet.Args()) < 1 {
-		return errors.New("Missing operand")
+		return errors.New("Missing operand"), 1
 	}
 	if len(flagSet.Args()) > 1 {
 		basename.RelativeTo = flagSet.Args()[0]
@@ -48,20 +42,25 @@ func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) error
 	} else {
 		basename.InputPath = flagSet.Args()[0]
 	}
-	return nil
+	return nil, 1
 }
 
 // Exec actually performs the basename
-func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if basename.RelativeTo != "" {
 		last := strings.LastIndex(basename.RelativeTo, basename.InputPath)
 		base := basename.InputPath[:last]
 		_, err := fmt.Fprintln(outPipe, base)
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else {
 		_, err := fmt.Fprintln(outPipe, path.Base(basename.InputPath))
-		return err
+		if err != nil {
+			return err, 1
+		}
 	}
+	return nil, 0
 }
 
 // Factory for *SomeBasename
@@ -77,12 +76,12 @@ func Basename(args ...string) *SomeBasename {
 }
 
 // CLI invocation for *SomeBasename
-func BasenameCli(call []string) error {
+func BasenameCli(call []string) (error, int) {
 	basename := NewBasename()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := basename.ParseFlags(call, errPipe)
+	err, code := basename.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return basename.Exec(inPipe, outPipe, errPipe)
 }

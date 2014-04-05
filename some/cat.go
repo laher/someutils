@@ -42,37 +42,36 @@ func (cat *SomeCat) SqueezeBlank() *SomeCat {
 	cat.IsSqueezeBlank = true
 	return cat
 }
-func (cat *SomeCat) ParseFlags(call []string, errPipe io.Writer) error {
+func (cat *SomeCat) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("cat", "[options] [files...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&cat.IsShowEnds, []string{"E", "show-ends"}, false, "display $ at end of each line")
 	flagSet.AliasedBoolVar(&cat.IsNumber, []string{"n", "number"}, false, "number all output lines")
 	flagSet.AliasedBoolVar(&cat.IsSqueezeBlank, []string{"s", "squeeze-blank"}, false, "squeeze repeated empty output lines")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 
 	if len(flagSet.Args()) > 0 {
 		cat.FileNames = flagSet.Args()
 	}
-	return nil
+	// else it's coming from STDIN
+	return nil, 0
 }
 
-func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if len(cat.FileNames) > 0 {
 		for _, fileName := range cat.FileNames {
-			if file, err := os.Open(fileName); err == nil {
+			file, err := os.Open(fileName)
+			if  err != nil {
+				return err, 1
+			} else {
 				if cat.isStraightCopy() {
 					_, err = io.Copy(outPipe, file)
 					if err != nil {
-						return err
+						return err, 1
 					}
 				} else {
 					scanner := bufio.NewScanner(file)
@@ -98,21 +97,19 @@ func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 					}
 					err := scanner.Err()
 					if err != nil {
-						return err
+						return err, 1
 					}
 				}
 				file.Close()
-			} else {
-				return err
 			}
 		}
 	} else {
 		_, err := io.Copy(outPipe, inPipe)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	}
-	return nil
+	return nil, 0
 }
 
 func NewCat() *SomeCat {
@@ -125,12 +122,12 @@ func Cat(fileNames ...string) *SomeCat {
 	return cat
 }
 
-func CatCli(call []string) error {
+func CatCli(call []string) (error, int) {
 	cat := NewCat()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := cat.ParseFlags(call, errPipe)
+	err, code := cat.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return cat.Exec(inPipe, outPipe, errPipe)
 }

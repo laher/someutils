@@ -2,7 +2,6 @@ package some
 
 import (
 	"errors"
-	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
@@ -16,7 +15,6 @@ func init() {
 
 // SomeTouch represents and performs a `touch` invocation
 type SomeTouch struct {
-	// TODO: add members here
 	args []string
 }
 
@@ -25,45 +23,33 @@ func (touch *SomeTouch) Name() string {
 	return "touch"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) error {
+func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("touch", "[options] [files...]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 
-	// TODO add flags here
-
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 
 	args := flagSet.Args()
 	if len(args) < 1 {
-		return errors.New("Not enough args given")
+		return errors.New("Not enough args given"), 1
 	}
 	touch.args = args
-
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the touch
-func (touch *SomeTouch) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
-	//TODO do something here!
+func (touch *SomeTouch) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	for _, filename := range touch.args {
 		err := touchFile(filename)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	}
-	return nil
+	return nil, 0
 }
 
 func touchFile(filename string) error {
@@ -98,12 +84,12 @@ func Touch(args ...string) *SomeTouch {
 }
 
 // CLI invocation for *SomeTouch
-func TouchCli(call []string) error {
+func TouchCli(call []string) (error, int) {
 	touch := NewTouch()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := touch.ParseFlags(call, errPipe)
+	err, code := touch.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return touch.Exec(inPipe, outPipe, errPipe)
 }

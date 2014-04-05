@@ -2,7 +2,6 @@ package some
 
 import (
 	"errors"
-	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
@@ -26,19 +25,13 @@ func (sleep *SomeSleep) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) error {
+func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("sleep", "", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	arg := flagSet.Args()[0]
 	last := arg[len(arg)-1:]
@@ -48,16 +41,15 @@ func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) error {
 	}
 	num := arg[:len(arg)-1]
 	sleep.unit = arg[len(arg)-1:]
-
 	sleep.amount, err = strconv.Atoi(num)
 	if err != nil {
-		return err
+		return err, 1
 	}
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the sleep
-func (sleep *SomeSleep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (sleep *SomeSleep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	var unitDur time.Duration
 	switch sleep.unit {
 	case "d":
@@ -69,10 +61,10 @@ func (sleep *SomeSleep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Wri
 	case "h":
 		unitDur = time.Hour
 	default:
-		return errors.New("Invalid time interval " + sleep.unit)
+		return errors.New("Invalid time interval " + sleep.unit), 1
 	}
 	time.Sleep(time.Duration(sleep.amount) * unitDur)
-	return nil
+	return nil, 0
 
 }
 
@@ -90,12 +82,12 @@ func Sleep(amount int, unit string) *SomeSleep {
 }
 
 // CLI invocation for *SomeSleep
-func SleepCli(call []string) error {
+func SleepCli(call []string) (error, int) {
 	sleep := NewSleep()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := sleep.ParseFlags(call, errPipe)
+	err, code := sleep.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return sleep.Exec(inPipe, outPipe, errPipe)
 }

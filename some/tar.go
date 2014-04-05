@@ -36,7 +36,7 @@ func (tar *SomeTar) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (t *SomeTar) ParseFlags(call []string, errPipe io.Writer) error {
+func (t *SomeTar) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("tar", "[option...] [FILE...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&t.IsCreate, []string{"c", "create"}, false, "create a new archive")
@@ -46,24 +46,17 @@ func (t *SomeTar) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet.AliasedBoolVar(&t.IsVerbose, []string{"v", "verbose"}, false, "verbosely list files processed")
 	flagSet.AliasedStringVar(&t.ArchiveFilename, []string{"f", "file"}, "", "use given archive file or device")
 
-	// TODO add flags here
-
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
+		return err, code
 	}
 
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
 	if countTrue(t.IsCreate, t.IsAppend, t.IsList, t.IsExtract) != 1 {
-		return errors.New("You must use *one* of -c, -t, -x, -r (create, list, extract or append), plus -f")
+		return errors.New("You must use *one* of -c, -t, -x, -r (create, list, extract or append), plus -f"), 1
 	}
 	t.args = flagSet.Args()
 
-	return nil
+	return nil, 0
 }
 
 func countTrue(args ...bool) int {
@@ -77,34 +70,43 @@ func countTrue(args ...bool) int {
 }
 
 // Exec actually performs the tar
-func (t *SomeTar) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (t *SomeTar) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	//overrideable??
 	destDir := "."
 	if t.IsCreate {
 		//OK
 		//fmt.Printf("Create %s\n", t.ArchiveFilename)
 		err := TarItems(t.ArchiveFilename, t.args, t, outPipe)
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else if t.IsAppend {
 		//hmm is this OK with STDIN??
 		if t.ArchiveFilename == "" {
-			return errors.New("Filename (-f) must be provided in Append mode")
+			return errors.New("Filename (-f) must be provided in Append mode"), 1
 		}
 		//OK
 		//fmt.Printf("Append %s\n", t.ArchiveFilename)
 		err := TarItems(t.ArchiveFilename, t.args, t, outPipe)
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else if t.IsList {
 		//fmt.Println("List", t.ArchiveFilename)
 		err := TestTarItems(t.ArchiveFilename, t.args, inPipe, outPipe)
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else if t.IsExtract {
 		//fmt.Println("Extract", t.ArchiveFilename)
 		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, inPipe, outPipe)
-		return err
+		if err != nil {
+			return err, 1
+		}
 	} else {
-		return errors.New("You must use ONLY one of -c, -t or -x (create, list or extract), plus -f")
-	}
+		return errors.New("You must use ONLY one of -c, -t or -x (create, list or extract), plus -f"), 1
+	} 
+	return nil, 0
 }
 
 func TarItems(tarfile string, includeFiles []string, t *SomeTar, outPipe io.Writer) error {
@@ -358,12 +360,12 @@ func Tar(archiveFilename string, args ...string) *SomeTar {
 }
 
 // CLI invocation for *SomeTar
-func TarCli(call []string) error {
+func TarCli(call []string) (error, int) {
 	tar := NewTar()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := tar.ParseFlags(call, errPipe)
+	err, code := tar.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return tar.Exec(inPipe, outPipe, errPipe)
 }

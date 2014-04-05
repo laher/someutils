@@ -2,7 +2,6 @@ package some
 
 import (
 	"bytes"
-	"fmt"
 	"strings"
 	"testing"
 )
@@ -12,9 +11,9 @@ func TestBasename(t *testing.T) {
 	var errPipe bytes.Buffer
 	inPipe := strings.NewReader("some/text")
 	basename := NewBasename()
-	err := basename.Exec(inPipe, &outPipe, &errPipe)
+	err, code := basename.Exec(inPipe, &outPipe, &errPipe)
 	if err != nil {
-		fmt.Printf("Error: %v\n", err)
+		t.Errorf("Error: %v - Code %d\n", err, code)
 	}
 	println(outPipe.String())
 	// TODO: 'Output' string for testing?

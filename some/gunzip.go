@@ -11,13 +11,14 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewGunzip() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGunzip) })
 }
 
 // SomeGunzip represents and performs a `gunzip` invocation
 type SomeGunzip struct {
 	IsTest    bool
 	IsKeep    bool
+	IsPipeOut bool
 	Filenames []string
 }
 
@@ -26,48 +27,45 @@ func (gunzip *SomeGunzip) Name() string {
 	return "gunzip"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (gunzip *SomeGunzip) ParseFlags(call []string, errPipe io.Writer) error {
+func (gunzip *SomeGunzip) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("gunzip", "[options] file.gz [list...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
 	flagSet.AliasedBoolVar(&gunzip.IsTest, []string{"t", "test"}, false, "test archive data")
 	flagSet.AliasedBoolVar(&gunzip.IsKeep, []string{"k", "keep"}, false, "keep gzip file")
+	flagSet.AliasedBoolVar(&gunzip.IsPipeOut, []string{"c", "stdout", "is-stdout"}, false, "output will go to the standard output")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	args := flagSet.Args()
 	//TODO STDIN support
-	if len(args) < 1 {
-		return errors.New("No gzip filename given")
+	if len(args) > 0 {
+		//OK
+	} else if uggo.IsPipingStdin() {
+		//OK
+	} else {
+		return errors.New("No gzip filename given"), 1
 	}
 	gunzip.Filenames = args
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the gunzip
-func (gunzip *SomeGunzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (gunzip *SomeGunzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if gunzip.IsTest {
 		err := TestGzipItems(gunzip.Filenames)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	} else {
-		err := GunzipItems(gunzip.Filenames, gunzip, outPipe)
+		err := gunzip.gunzipItems(inPipe, outPipe, errPipe)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	}
-	return nil
+	return nil, 0
 
 }
 
@@ -95,74 +93,98 @@ func TestGzipItem(item io.Reader) error {
 	return nil
 }
 
-func GunzipItems(items []string, gunzip *SomeGunzip, outPipe io.Writer) error {
-	for _, item := range items {
-		fh, err := os.Open(item)
+func (gunzip *SomeGunzip) gunzipItems(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+	if len(gunzip.Filenames) == 0 {
+		//stdin
+		err := gunzip.gunzipItem(inPipe, outPipe, errPipe)
 		if err != nil {
 			return err
 		}
-		err = GunzipItem(fh, outPipe)
-		if err != nil {
-			return err
-		}
-		err = fh.Close()
-		if err != nil {
-			return err
-		}
-		if !gunzip.IsKeep {
-			err = os.Remove(item)
+	} else {
+		for _, item := range gunzip.Filenames {
+			fh, err := os.Open(item)
 			if err != nil {
 				return err
+			}
+			err = gunzip.gunzipItem(fh, outPipe, errPipe)
+			if err != nil {
+				return err
+			}
+			err = fh.Close()
+			if err != nil {
+				return err
+			}
+			if !gunzip.IsKeep {
+				err = os.Remove(item)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
 }
 
-func GunzipItem(item io.Reader, outPipe io.Writer) error {
+func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	r, err := gzip.NewReader(item)
 	if err != nil {
 		return err
 	}
 	defer r.Close()
-	destFileName := r.Header.Name
-	fmt.Fprintln(outPipe, "Filename", destFileName)
-	destFile, err := os.Create(destFileName)
-	defer destFile.Close()
-	if err != nil {
-		return err
-	}
-	_, err = io.Copy(destFile, r)
-	if err != nil {
-		return err
-	}
-	err = destFile.Close()
-	if err != nil {
-		return err
+	var w io.Writer
+	if gunzip.IsPipeOut {
+		w = outPipe
+		_, err = io.Copy(w, r)
+		if err != nil {
+			return err
+		}
+	} else {
+		destFileName := r.Header.Name
+		fmt.Fprintln(errPipe, "Filename", destFileName)
+		destFile, err := os.Create(destFileName)
+		defer destFile.Close()
+		if err != nil {
+			return err
+		}
+		w = destFile
+		_, err = io.Copy(w, r)
+		if err != nil {
+			return err
+		}
+
+		err = destFile.Close()
+		if err != nil {
+			return err
+		}
 	}
 	err = r.Close()
 	return err
 }
 
-// Factory for *SomeGunzip
-func NewGunzip() *SomeGunzip {
-	return new(SomeGunzip)
+
+func GunzipToOut(args ...string) *SomeGunzip {
+	gunzip := Gunzip(args...)
+	gunzip.IsPipeOut = true
+	return gunzip
 }
 
 // Factory for *SomeGunzip
 func Gunzip(args ...string) *SomeGunzip {
-	gunzip := NewGunzip()
+	gunzip := new(SomeGunzip)
 	gunzip.Filenames = args
+	if len(args) == 0 {
+		gunzip.IsPipeOut = true
+	}
 	return gunzip
 }
 
 // CLI invocation for *SomeGunzip
-func GunzipCli(call []string) error {
-	gunzip := NewGunzip()
+func GunzipCli(call []string) (error, int) {
+	gunzip := new(SomeGunzip)
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := gunzip.ParseFlags(call, errPipe)
+	err, code := gunzip.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return gunzip.Exec(inPipe, outPipe, errPipe)
 }

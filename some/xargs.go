@@ -3,7 +3,6 @@ package some
 import (
 	"bufio"
 	"errors"
-	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
@@ -26,35 +25,30 @@ func (xargs *SomeXargs) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (xargs *SomeXargs) ParseFlags(call []string, errPipe io.Writer) error {
+func (xargs *SomeXargs) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("xargs", "[options] [args...]", someutils.VERSION)
 	flagSet.SetOutput(errPipe)
-	// TODO multiple processes at once
+	// TODO multiple processes at once ?
 	flagSet.AliasedIntVar(&xargs.maxProcesses, []string{"P", "max-procs"}, 1, "Maximum processes")
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
+		return err, code
 	}
 
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
-	}
 	args := flagSet.Args()
 	if len(args) < 1 {
-		return errors.New("No command specified")
+		return errors.New("No command specified"), 1
 	}
 	if !someutils.Exists(args[0]) {
-		return errors.New(" Command does not exist.")
+		return errors.New("Command does not exist."), 1
 	}
 	xargs.utilFactory = someutils.GetPipableCliUtilFactory(args[0])
 	xargs.utilArgs = args
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the xargs
-func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	util := xargs.utilFactory()
 	args := xargs.newArgset(util.Name())
 	reader := bufio.NewReader(inPipe)
@@ -65,38 +59,39 @@ func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Wri
 		if count >= maxCount {
 			count = 0
 			//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-			err := util.ParseFlags(args, errPipe)
+			err, code := util.ParseFlags(args, errPipe)
 			if err != nil {
-				return err
+				return err, code
 			}
-			err = util.Exec(inPipe, outPipe, errPipe)
+			err, code = util.Exec(inPipe, outPipe, errPipe)
 			if err != nil {
-				return err
+				return err, code
 			}
 		}
 		line, _, err := reader.ReadLine()
 		if err == io.EOF {
 			cont = false
 		} else if err != nil {
-			return err
+			return err, 1
 		} else {
 			args = append(args, string(line))
 			if err != nil {
-				return err
+				return err, 1
 			}
 			count++
 		}
 	}
+	//still more args to process
 	if count > 0 {
 		//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-		err := util.ParseFlags(args, errPipe)
+		err, code := util.ParseFlags(args, errPipe)
 		if err != nil {
-			return err
+			return err, code
 		}
-		err = util.Exec(inPipe, outPipe, errPipe)
-		return err
+		err, code = util.Exec(inPipe, outPipe, errPipe)
+		return err, code
 	}
-	return nil
+	return nil, 0
 }
 
 func (xargs *SomeXargs) newArgset(cmdName string) []string {
@@ -119,12 +114,12 @@ func Xargs(utilFactory someutils.PipableCliUtilFactory, args ...string) *SomeXar
 }
 
 // CLI invocation for *SomeXargs
-func XargsCli(call []string) error {
+func XargsCli(call []string) (error, int) {
 	xargs := NewXargs()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := xargs.ParseFlags(call, errPipe)
+	err, code := xargs.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return xargs.Exec(inPipe, outPipe, errPipe)
 }

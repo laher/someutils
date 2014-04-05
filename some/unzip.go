@@ -17,7 +17,6 @@ func init() {
 
 // SomeUnzip represents and performs a `unzip` invocation
 type SomeUnzip struct {
-	// TODO: add members here
 	destDir string
 	isTest  bool
 
@@ -33,7 +32,7 @@ func (unzip *SomeUnzip) Name() string {
 // TODO: add validation here
 
 // ParseFlags parses flags from a commandline []string
-func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) error {
+func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("unzip", "[options] file.zip [list...]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 	destDir := "."
@@ -41,42 +40,34 @@ func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) error {
 	test := false
 	flagSet.BoolVar(&unzip.isTest, "t", test, "test archive data")
 
-	// TODO add flags here
-
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	args := flagSet.Args()
 	if len(args) < 1 {
-		return errors.New("No zip filename given")
+		return errors.New("No zip filename given"), 1
 	}
 	unzip.zipname = args[0]
 	unzip.files = args[1:]
 
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the unzip
-func (unzip *SomeUnzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (unzip *SomeUnzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	if unzip.isTest {
 		err := TestItems(unzip.zipname, unzip.files, outPipe, errPipe)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	} else {
 		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, errPipe)
 		if err != nil {
-			return err
+			return err, 1
 		}
 	}
-	return nil
+	return nil, 0
 }
 
 func containsGlob(haystack []string, needle string, errPipe io.Writer) bool {
@@ -220,12 +211,12 @@ func Unzip(zipname string, files ...string) *SomeUnzip {
 }
 
 // CLI invocation for *SomeUnzip
-func UnzipCli(call []string) error {
+func UnzipCli(call []string) (error, int) {
 	unzip := NewUnzip()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := unzip.ParseFlags(call, errPipe)
+	err, code := unzip.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return unzip.Exec(inPipe, outPipe, errPipe)
 }

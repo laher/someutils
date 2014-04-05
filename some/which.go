@@ -26,32 +26,24 @@ func (which *SomeWhich) Name() string {
 	return "which"
 }
 
-// TODO: add validation here
-
 // ParseFlags parses flags from a commandline []string
-func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) error {
+func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("which", "[options] [args...]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 
 	flagSet.BoolVar(&which.all, "a", false, "Print all matching executables in PATH, not just the first.")
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 
 	which.args = flagSet.Args()
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the which
-func (which *SomeWhich) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (which *SomeWhich) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	path := os.Getenv("PATH")
 	if runtime.GOOS == "windows" {
 		path = ".;" + path
@@ -60,7 +52,7 @@ func (which *SomeWhich) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Wri
 	for _, arg := range which.args {
 		checkPathParts(arg, pl, which, outPipe)
 	}
-	return nil
+	return nil, 0
 
 }
 
@@ -111,12 +103,12 @@ func Which(args ...string) *SomeWhich {
 }
 
 // CLI invocation for *SomeWhich
-func WhichCli(call []string) error {
+func WhichCli(call []string) (error, int) {
 	which := NewWhich()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := which.ParseFlags(call, errPipe)
+	err, code := which.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return which.Exec(inPipe, outPipe, errPipe)
 }

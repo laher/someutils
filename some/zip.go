@@ -3,7 +3,6 @@ package some
 import (
 	"archive/zip"
 	"errors"
-	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
@@ -27,37 +26,31 @@ func (z *SomeZip) Name() string {
 }
 
 // ParseFlags parses flags from a commandline []string
-func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) error {
+func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("zip", "[options] [files...]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 
-	err := flagSet.Parse(call[1:])
+	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
-		fmt.Fprintf(errWriter, "Flag error:  %v\n\n", err.Error())
-		flagSet.Usage()
-		return err
-	}
-
-	if flagSet.ProcessHelpOrVersion() {
-		return nil
+		return err, code
 	}
 	args := flagSet.Args()
 	if len(args) < 2 {
 		flagSet.Usage()
-		return errors.New("Not enough args given")
+		return errors.New("Not enough args given"), 1
 	}
 	z.zipFilename = args[0]
 	z.items = args[1:]
-	return nil
+	return nil, 0
 }
 
 // Exec actually performs the zip
-func (z *SomeZip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (z *SomeZip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
 	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {
-		return err
+		return err, 1
 	}
-	return nil
+	return nil, 0
 
 }
 
@@ -164,12 +157,12 @@ func Zip(args ...string) *SomeZip {
 }
 
 // CLI invocation for *SomeZip
-func ZipCli(call []string) error {
+func ZipCli(call []string) (error, int) {
 	z := NewZip()
 	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err := z.ParseFlags(call, errPipe)
+	err, code := z.ParseFlags(call, errPipe)
 	if err != nil {
-		return err
+		return err, code
 	}
 	return z.Exec(inPipe, outPipe, errPipe)
 }

@@ -17,10 +17,12 @@ func main() {
 		showHelp(" Command does not exist.")
 		os.Exit(1)
 	}
-	err := someutils.Call(os.Args[1], os.Args[1:])
+	err, code := someutils.Call(os.Args[1], os.Args[1:])
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(code)
+		}
 	}
 }
 
