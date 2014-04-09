@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewHead() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeHead) })
 }
 
 // SomeHead represents and performs a `head` invocation
@@ -90,20 +90,15 @@ func NewHead() *SomeHead {
 }
 
 // Factory for *SomeHead
-func Head(lines int, args ...string) *SomeHead {
+func Head(lines int, args ...string) someutils.NamedPipable {
 	head := NewHead()
 	head.lines = lines
 	head.Filenames = args
-	return head
+	return someutils.WrapNamed(head)
 }
 
 // CLI invocation for *SomeHead
 func HeadCli(call []string) (error, int) {
-	head := NewHead()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := head.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return head.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeHead)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

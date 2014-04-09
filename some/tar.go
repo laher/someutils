@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTar() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTar) })
 }
 
 // SomeTar represents and performs a `tar` invocation
@@ -361,11 +361,7 @@ func Tar(archiveFilename string, args ...string) *SomeTar {
 
 // CLI invocation for *SomeTar
 func TarCli(call []string) (error, int) {
-	tar := NewTar()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := tar.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return tar.Exec(inPipe, outPipe, errPipe)
+
+	util := new(SomeTar)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

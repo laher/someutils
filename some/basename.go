@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewBasename() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return someutils.WrapNamed(new(SomeBasename)) })
 }
 
 // SomeBasename represents and performs a `basename` invocation
@@ -63,25 +63,17 @@ func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe 
 	return nil, 0
 }
 
-// Factory for *SomeBasename
-func NewBasename() *SomeBasename {
-	return new(SomeBasename)
-}
+
 
 // Factory for *SomeBasename
-func Basename(args ...string) *SomeBasename {
-	basename := NewBasename()
+func Basename(args ...string) someutils.NamedPipable {
+	basename := new(SomeBasename)
 	//basename.Xxx = args
-	return basename
+	return someutils.WrapNamed(basename)
 }
 
 // CLI invocation for *SomeBasename
 func BasenameCli(call []string) (error, int) {
-	basename := NewBasename()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := basename.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return basename.Exec(inPipe, outPipe, errPipe)
+	basename := new(SomeBasename)
+	return someutils.StdInvoke(someutils.WrapUtil(basename), call)
 }

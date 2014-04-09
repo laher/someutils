@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTouch() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTouch) })
 }
 
 // SomeTouch represents and performs a `touch` invocation
@@ -85,11 +85,7 @@ func Touch(args ...string) *SomeTouch {
 
 // CLI invocation for *SomeTouch
 func TouchCli(call []string) (error, int) {
-	touch := NewTouch()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := touch.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return touch.Exec(inPipe, outPipe, errPipe)
+
+	util := new(SomeTouch)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

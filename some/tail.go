@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTail() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTail) })
 }
 
 // SomeTail represents and performs a `tail` invocation
@@ -176,11 +176,6 @@ func Tail(args ...string) *SomeTail {
 
 // CLI invocation for *SomeTail
 func TailCli(call []string) (error, int) {
-	tail := NewTail()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := tail.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return tail.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeTail)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

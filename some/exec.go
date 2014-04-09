@@ -3,6 +3,7 @@ package some
 import (
 	"io"
 	"os/exec"
+	"github.com/laher/someutils"
 )
 
 // SomeExec represents and performs a `exec` invocation
@@ -38,14 +39,10 @@ func (exe *SomeExec) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer
 	return err, exitCode
 }
 
-// Factory for *SomeExec
-func NewExec() *SomeExec {
-	return new(SomeExec)
-}
 
 // Factory for *SomeExec
-func Exec(args ...string) *SomeExec {
-	exe := NewExec()
+func Exec(args ...string) someutils.NamedPipable {
+	exe := new(SomeExec)
 	exe.args = args
-	return exe
+	return someutils.WrapNamed(exe)
 }

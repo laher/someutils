@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewGzip() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGzip) })
 }
 
 // SomeGzip represents and performs a `gzip` invocation
@@ -133,31 +133,21 @@ func (gz *SomeGzip) doGzip(reader io.Reader, writer io.Writer, filename string) 
 }
 
 // Factory for *SomeGzip
-func NewGzip() *SomeGzip {
-	return new(SomeGzip)
-}
-
-// Factory for *SomeGzip
-func Gzip(args ...string) *SomeGzip {
-	gz := NewGzip()
+func Gzip(args ...string) someutils.NamedPipable {
+	gz := new(SomeGzip)
 	gz.Filenames = args
-	return gz
+	return someutils.WrapNamed(gz)
 }
 
 // Factory for *SomeGzip
-func GzipTo(outFile string) *SomeGzip {
-	gz := NewGzip()
+func GzipTo(outFile string) someutils.NamedPipable {
+	gz := new(SomeGzip)
 	gz.outFile = outFile
-	return gz
+	return someutils.WrapNamed(gz)
 }
 
 // CLI invocation for *SomeGzip
 func GzipCli(call []string) (error, int) {
-	gz := NewGzip()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := gz.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return gz.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeGzip)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

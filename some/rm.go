@@ -11,7 +11,8 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewRm() })
+
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeRm) })
 }
 
 // SomeRm represents and performs a `rm` invocation
@@ -90,25 +91,17 @@ func deleteDir(dir string) error {
 	return nil
 }
 
-// Factory for *SomeRm
-func NewRm() *SomeRm {
-	return new(SomeRm)
-}
+
 
 // Factory for *SomeRm
 func Rm(args ...string) *SomeRm {
-	rm := NewRm()
+	rm := new(SomeRm)
 	rm.fileGlobs = args
 	return rm
 }
 
 // CLI invocation for *SomeRm
 func RmCli(call []string) (error, int) {
-	rm := NewRm()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := rm.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return rm.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeRm)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTr() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTr) })
 }
 
 type SomeTr struct {
@@ -155,31 +155,27 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 func NewTr() *SomeTr {
 	return new(SomeTr)
 }
-func Tr(set1, set2 string) *SomeTr {
+func Tr(set1, set2 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.SetSet1(set1)
 	tr.SetSet2(set2)
-	return tr
+	return someutils.WrapNamed(tr)
 }
-func TrD(set1 string) *SomeTr {
+func TrD(set1 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.IsDelete = true
 	tr.SetSet1(set1)
-	return tr
+	return someutils.WrapNamed(tr)
 }
-func TrC(set1 string) *SomeTr {
+func TrC(set1 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.IsComplement = true
 	tr.SetSet1(set1)
-	return tr
+	return someutils.WrapNamed(tr)
 }
 
 func TrCli(call []string) (error, int) {
-	tr := NewTr()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := tr.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return tr.Exec(inPipe, outPipe, errPipe)
+
+	util := new(SomeTr)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

@@ -1,22 +1,30 @@
 package some
 
 import (
-	"bytes"
 	"github.com/laher/someutils"
-	"strings"
 	"testing"
 )
 
 func TestXargsPipeline(t *testing.T) {
-	pipeline := someutils.NewPipeline(Xargs(LsFactory, "-l"))
-	var out bytes.Buffer
-	var errout bytes.Buffer
-	in := strings.NewReader(".\n..\n")
-	err, code, index := pipeline.ExecAndWait(someutils.NewPipeset(in, &out, &errout))
-	t.Logf("Out (length): %d\n", len(out.String()))
-	t.Logf("Errout: %+v\n", errout.String())
+	pipeline := someutils.NewPipeline(Xargs(LsFact, "-l"))
+	invocation, out, errout := someutils.InvocationFromString(".\n..\n")
+	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
 	if err != nil {
-		t.Errorf("Error: %v, code: %d, index: %d\n", err, code, index)
+		t.Errorf("error piping to pipeline: %v", err)
+	}
+	errinvocation := someutils.Wait(invocationchan, count)
+	outstring := out.String()
+	if errinvocation == nil {
+
+			t.Errorf("Wait returned nil. Expecting %d invocations", count)
+	}
+	if errinvocation.Err!=nil {
+		t.Logf("errout: %+v\n", errout.String())
+		t.Logf("stdout: %+v", outstring)
+		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
+		if *errinvocation.ExitCode != 0 {
+			t.Errorf("error: %+v\n", errinvocation.Err)
+		}
 	}
 	// TODO: 'Output' string for testing?
 }

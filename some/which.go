@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewWhich() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeWhich) })
 }
 
 // SomeWhich represents and performs a `which` invocation
@@ -104,11 +104,6 @@ func Which(args ...string) *SomeWhich {
 
 // CLI invocation for *SomeWhich
 func WhichCli(call []string) (error, int) {
-	which := NewWhich()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := which.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return which.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeWhich)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

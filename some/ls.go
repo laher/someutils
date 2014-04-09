@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewLs() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeLs) })
 }
 
 // SomeLs represents and performs a `ls` invocation
@@ -127,30 +127,19 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 }
 
 // Factory for *SomeLs
-func NewLs() *SomeLs {
-	return new(SomeLs)
-}
-
-func LsFactory() someutils.PipableCliUtil {
-	return NewLs()
-}
-
-// Factory for *SomeLs
-func Ls(args ...string) *SomeLs {
-	ls := NewLs()
+func Ls(args ...string) someutils.NamedPipable {
+	ls := new(SomeLs)
 	ls.globs = args
-	return ls
+	return someutils.WrapNamed(ls)
+}
+func LsFact() someutils.CliPipable {
+	return someutils.WrapUtil(new(SomeLs))
 }
 
 // CLI invocation for *SomeLs
 func LsCli(call []string) (error, int) {
-	ls := NewLs()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := ls.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return ls.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeLs)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }
 
 func getDirList(globs []string, ls *SomeLs, inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) ([]string, error) {

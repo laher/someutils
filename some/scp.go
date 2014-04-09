@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new (scp.SecureCopier) })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(scp.SecureCopier) })
 }
 /*
 // SomeScp represents and performs a `scp` invocation

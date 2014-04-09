@@ -14,21 +14,16 @@ type PipeRedirector struct {
 	isRedirectToNull      bool
 	isAppend              bool
 	Filename              string
-	errInPipe             io.Reader
 }
-
+/*
 // ErrPipeRedirector redirects the previous Execable's 'err' pipe
 type ErrPipeRedirector struct {
 	PipeRedirector
 }
-
-//redirects from errIn
-func (redirector *ErrPipeRedirector) SetErrIn(errInPipe io.Reader) {
-	redirector.errInPipe = errInPipe
-}
+*/
 
 // Exec actually performs the redirection
-func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (redirector *PipeRedirector) Invoke(invocation *Invocation) (error, int) {
 	if redirector.Filename != "" {
 		var fo io.WriteCloser
 		flag := os.O_CREATE | os.O_WRONLY
@@ -42,9 +37,9 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 		defer fo.Close()
 		var rdr io.Reader
 		if redirector.isRedirectFromErrPipe {
-			rdr = redirector.errInPipe
+			rdr = invocation.ErrInPipe
 		} else {
-			rdr = inPipe
+			rdr = invocation.InPipe
 		}
 		_, err = io.Copy(fo, rdr)
 		if err == io.EOF || err == io.ErrClosedPipe {
@@ -60,20 +55,20 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 		var rdr io.Reader
 		var writer io.Writer
 		if redirector.isRedirectFromErrPipe {
-			rdr = redirector.errInPipe
+			rdr = invocation.ErrInPipe
 		} else {
-			rdr = inPipe
+			rdr = invocation.InPipe
 		}
 
 		if redirector.isRedirectToErrPipe {
-			writer = errPipe
+			writer = invocation.ErrOutPipe
 		} else if redirector.isRedirectToNull {
 			//wrap Discard into an io.Pipe to ensure it is Closable
 			r, w := io.Pipe()
 			go io.Copy(ioutil.Discard, r)
 			writer = w
 		} else {
-			writer = outPipe
+			writer = invocation.OutPipe
 		}
 
 		closer, isCloser := writer.(io.Closer)
@@ -99,21 +94,16 @@ func (redirector *PipeRedirector) Exec(inPipe io.Reader, outPipe io.Writer, errP
 	return nil, 0
 }
 
-// Factory for *PipeRedirector
-func NewPipeRedirector() *PipeRedirector {
-	return new(PipeRedirector)
-}
-
 // Factory for redirecting 'out' pipe to a file
 func OutTo(filename string) *PipeRedirector {
-	redirector := NewPipeRedirector()
+	redirector := new(PipeRedirector)
 	redirector.Filename = filename
 	return redirector
 }
 
 // Factory for redirecting 'err' pipe to a file
 func ErrTo(filename string) *PipeRedirector {
-	redirector := NewPipeRedirector()
+	redirector := new(PipeRedirector)
 	redirector.Filename = filename
 	redirector.isRedirectToErrPipe = true
 	return redirector
@@ -121,29 +111,29 @@ func ErrTo(filename string) *PipeRedirector {
 
 // Factory for redirecting 'out' pipe to Null (nowhere)
 func OutToNull() *PipeRedirector {
-	redirector := NewPipeRedirector()
+	redirector := new(PipeRedirector)
 	redirector.isRedirectToNull = true
 	return redirector
 }
 
 // Factory for redirecting 'err' pipe to Null (nowhere)
-func ErrToNull() *ErrPipeRedirector {
-	redirector := new(ErrPipeRedirector)
+func ErrToNull() *PipeRedirector {
+	redirector := new(PipeRedirector)
 	redirector.isRedirectFromErrPipe = true
 	redirector.isRedirectToNull = true
 	return redirector
 }
 
 // Factory for redirecting 'err' pipe to 'out' pipe
-func ErrToOut() *ErrPipeRedirector {
-	redirector := new(ErrPipeRedirector)
+func ErrToOut() *PipeRedirector {
+	redirector := new(PipeRedirector)
 	redirector.isRedirectFromErrPipe = true
 	return redirector
 }
 
 // Factory for redirecting 'out' pipe to 'err' pipe
 func OutToErr() *PipeRedirector {
-	redirector := NewPipeRedirector()
+	redirector := new(PipeRedirector)
 	redirector.isRedirectToErrPipe = true
 	return redirector
 }

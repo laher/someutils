@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewTee() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTee) })
 }
 
 // SomeTee represents and performs a `tee` invocation
@@ -84,11 +84,7 @@ func Tee(args ...string) *SomeTee {
 
 // CLI invocation for *SomeTee
 func TeeCli(call []string) (error, int) {
-	tee := NewTee()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := tee.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return tee.Exec(inPipe, outPipe, errPipe)
+
+	util := new(SomeTee)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

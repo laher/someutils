@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewWc() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeWc) })
 }
 
 // SomeWc represents and performs a `wc` invocation
@@ -156,11 +156,6 @@ func Wc(args ...string) *SomeWc {
 
 // CLI invocation for *SomeWc
 func WcCli(call []string) (error, int) {
-	wc := NewWc()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := wc.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return wc.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeWc)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

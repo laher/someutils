@@ -9,12 +9,12 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func () someutils.NamedPipable { return NewXargs() })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeXargs) })
 }
 
 // SomeXargs represents and performs a `xargs` invocation
 type SomeXargs struct {
-	utilFactory someutils.PipableCliUtilFactory
+	utilFactory someutils.CliPipableFactory
 	utilArgs []string
 	maxProcesses int
 }
@@ -42,16 +42,18 @@ func (xargs *SomeXargs) ParseFlags(call []string, errPipe io.Writer) (error, int
 	if !someutils.Exists(args[0]) {
 		return errors.New("Command does not exist."), 1
 	}
-	xargs.utilFactory = someutils.GetPipableCliUtilFactory(args[0])
+	xargs.utilFactory = someutils.GetCliPipableFactory(args[0])
 	xargs.utilArgs = args
 	return nil, 0
 }
 
 // Exec actually performs the xargs
-func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (xargs *SomeXargs) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	util := xargs.utilFactory()
 	args := xargs.newArgset(util.Name())
-	reader := bufio.NewReader(inPipe)
+	reader := bufio.NewReader(invocation.InPipe)
 	cont := true
 	count := 0
 	maxCount := 5
@@ -59,11 +61,11 @@ func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Wri
 		if count >= maxCount {
 			count = 0
 			//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-			err, code := util.ParseFlags(args, errPipe)
+			err, code := util.ParseFlags(args, invocation.ErrOutPipe)
 			if err != nil {
 				return err, code
 			}
-			err, code = util.Exec(inPipe, outPipe, errPipe)
+			err, code = util.Invoke(invocation)
 			if err != nil {
 				return err, code
 			}
@@ -84,11 +86,11 @@ func (xargs *SomeXargs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Wri
 	//still more args to process
 	if count > 0 {
 		//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-		err, code := util.ParseFlags(args, errPipe)
+		err, code := util.ParseFlags(args, invocation.ErrOutPipe)
 		if err != nil {
 			return err, code
 		}
-		err, code = util.Exec(inPipe, outPipe, errPipe)
+		err, code = util.Invoke(invocation)
 		return err, code
 	}
 	return nil, 0
@@ -106,7 +108,7 @@ func NewXargs() *SomeXargs {
 }
 
 // Factory for *SomeXargs
-func Xargs(utilFactory someutils.PipableCliUtilFactory, args ...string) *SomeXargs {
+func Xargs(utilFactory someutils.CliPipableFactory, args ...string) *SomeXargs {
 	xargs := NewXargs()
 	xargs.utilFactory = utilFactory
 	xargs.utilArgs = args
@@ -115,11 +117,6 @@ func Xargs(utilFactory someutils.PipableCliUtilFactory, args ...string) *SomeXar
 
 // CLI invocation for *SomeXargs
 func XargsCli(call []string) (error, int) {
-	xargs := NewXargs()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := xargs.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return xargs.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeXargs)
+	return someutils.StdInvoke(util, call)
 }

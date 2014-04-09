@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewGrep() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGrep) })
 }
 
 // SomeGrep represents and performs a `grep` invocation
@@ -182,30 +182,21 @@ func compile(pattern string, grep *SomeGrep) (*regexp.Regexp, error) {
 	}
 }
 
-// Factory for *SomeGrep
-func NewGrep() *SomeGrep {
-	return new(SomeGrep)
-}
 
 // Factory for *SomeGrep
-func Grep(args ...string) *SomeGrep {
-	grep := NewGrep()
+func Grep(args ...string) someutils.NamedPipable {
+	grep := new (SomeGrep)
 	grep.pattern = args[0]
 	if len(args) > 1 {
 		grep.globs = args[1:]
 	} else {
 		grep.globs = []string{}
 	}
-	return grep
+	return someutils.WrapNamed(grep)
 }
 
 // CLI invocation for *SomeGrep
 func GrepCli(call []string) (error, int) {
-	grep := NewGrep()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := grep.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return grep.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeGrep)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

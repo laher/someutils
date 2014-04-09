@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewDirname() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeDirname) })
 }
 
 // SomeDirname represents and performs a `dirname` invocation
@@ -58,11 +58,6 @@ func Dirname(args ...string) *SomeDirname {
 
 // CLI invocation for *SomeDirname
 func DirnameCli(call []string) (error, int) {
-	dirname := NewDirname()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := dirname.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return dirname.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeDirname)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

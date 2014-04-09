@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewUnzip() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeUnzip) })
 }
 
 // SomeUnzip represents and performs a `unzip` invocation
@@ -212,11 +212,6 @@ func Unzip(zipname string, files ...string) *SomeUnzip {
 
 // CLI invocation for *SomeUnzip
 func UnzipCli(call []string) (error, int) {
-	unzip := NewUnzip()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := unzip.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return unzip.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeUnzip)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

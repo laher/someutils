@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return NewCp() })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeCp) })
 }
 
 // SomeCp represents and performs a `cp` invocation
@@ -183,11 +183,6 @@ func Cp(args ...string) *SomeCp {
 
 // CLI invocation for *SomeCp
 func CpCli(call []string) (error, int) {
-	cp := NewCp()
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := cp.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return cp.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeCp)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

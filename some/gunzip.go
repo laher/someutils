@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGunzip) })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGunzip) })
 }
 
 // SomeGunzip represents and performs a `gunzip` invocation
@@ -162,29 +162,25 @@ func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe 
 }
 
 
-func GunzipToOut(args ...string) *SomeGunzip {
-	gunzip := Gunzip(args...)
+func GunzipToOut(args ...string) someutils.CliPipable {
+	gunzip := new(SomeGunzip)
+	gunzip.Filenames = args
 	gunzip.IsPipeOut = true
-	return gunzip
+	return someutils.WrapUtil(gunzip)
 }
 
 // Factory for *SomeGunzip
-func Gunzip(args ...string) *SomeGunzip {
+func Gunzip(args ...string) someutils.CliPipable {
 	gunzip := new(SomeGunzip)
 	gunzip.Filenames = args
 	if len(args) == 0 {
 		gunzip.IsPipeOut = true
 	}
-	return gunzip
+	return someutils.WrapUtil(gunzip)
 }
 
 // CLI invocation for *SomeGunzip
 func GunzipCli(call []string) (error, int) {
-	gunzip := new(SomeGunzip)
-	inPipe, outPipe, errPipe := someutils.StdPipes()
-	err, code := gunzip.ParseFlags(call, errPipe)
-	if err != nil {
-		return err, code
-	}
-	return gunzip.Exec(inPipe, outPipe, errPipe)
+	util := new(SomeGunzip)
+	return someutils.StdInvoke(someutils.WrapUtil(util), call)
 }

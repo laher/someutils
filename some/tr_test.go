@@ -1,12 +1,8 @@
 package some
 
 import (
-	"bytes"
 	"github.com/laher/someutils"
-	"io"
-	"strings"
 	"testing"
-	"time"
 )
 
 func TestTrCli(t *testing.T) {
@@ -22,7 +18,7 @@ func TestTrCli(t *testing.T) {
 	}
 	//println(out.String())
 }
-
+/*
 func TestFluentTr(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
@@ -56,20 +52,23 @@ func Test2pipes(t *testing.T) {
 	}
 	t.Logf("Errout: %+v\n", errout.String())
 }
-
+*/
 func TestTrPipeline(t *testing.T) {
-	var out bytes.Buffer
-	var errout bytes.Buffer
-	in := strings.NewReader("Hi\nHo\nhI\nhO\n")
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"))
-	e := pipeline.Exec(someutils.NewPipeset(in, &out, &errout))
-	err, code, index := someutils.Wait(e, 2)
+	invocation, out, errout := someutils.InvocationFromString("Hi\nHo\nhI\nhO\n")
+	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
 	if err != nil {
-		t.Logf("Errout: %+v\n", errout.String())
-		if code != 0 {
-			t.Errorf("Error: %v, code: %d, index: %d\n", err, code, index)
+		t.Errorf("error piping to pipeline: %v", err)
+	}
+	errinvocation := someutils.Wait(invocationchan, count)
+	outstring := out.String()
+	if errinvocation.Err!=nil {
+		t.Logf("errout: %+v\n", errout.String())
+		t.Logf("stdout: %+v", outstring)
+		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
+		if *errinvocation.ExitCode != 0 {
+			t.Errorf("error: %+v\n", errinvocation.Err)
 		}
-		t.Logf("Error: %v, code: %d\n", err, code)
 	}
 
 	output := out.String()

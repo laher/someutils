@@ -1,7 +1,5 @@
 package someutils
 
-import "io"
-
 const (
 	VERSION = "0.5.1-snapshot"
 )
@@ -13,42 +11,24 @@ type CliUtil interface {
 }
 */
 
-//a Pipable can be executed on a pipeline
-type Pipable interface {
-	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int)
-}
 
-// a Named Pipable can be registered for use by e.g. xargs
-type NamedPipable interface {
-	Pipable
-	Name() string
-}
 
-//PipableUtil represents a util which can be initialized by flags & executed on a Pipeline
-type PipableCliUtil interface {
-	NamedPipable
-	ParseFlags(call []string, errOut io.Writer) (error, int)
-}
 
-type PipableFactory func() Pipable
-type NamedPipableFactory func() NamedPipable
-type PipableCliUtilFactory func() PipableCliUtil
 
-type ArchiveItem struct {
-	//if FileSystemPath is empty, use Data instead
-	FileSystemPath string
-	ArchivePath    string
-	Data           []byte
-}
+
 
 var (
-	allCliUtils        = make(map[string]PipableCliUtil)
+	allCliUtils        = make(map[string]CliPipable)
 	allPipables = make(map[string]NamedPipableFactory)
 )
 
 // Registers utils for use by 'some' command.
-func Register(u PipableCliUtil) {
+func Register(u CliPipable) {
 	allCliUtils[u.Name()] = u
+}
+func RegisterSimple(somefunc CliPipableSimpleFactory) {
+	RegisterPipable(func() NamedPipable { return WrapNamed(somefunc()) })
+	Register(WrapUtil(somefunc()))
 }
 
 func RegisterPipable(somefunc NamedPipableFactory) {
@@ -57,7 +37,7 @@ func RegisterPipable(somefunc NamedPipableFactory) {
 	allPipables[name] = somefunc
 
 	//register as CliUtil if possible
-	pcu, ok := pipable.(PipableCliUtil)
+	pcu, ok := pipable.(CliPipable)
 	if ok {
 		//inPipe, outPipe, errPipe := StdPipes()
 		Register(pcu)
@@ -85,17 +65,17 @@ func CliExists(name string) bool {
 
 // deprecated. Use GetCliUtil, ParseFlags & Exec instead.
 func Call(name string, args []string) (error, int) {
-	inPipe, outPipe, errPipe := StdPipes()
+	ps := StdInvocation()
 	util := allCliUtils[name]
-	return CallUtil(util, args, inPipe, outPipe, errPipe)
+	return CallUtil(util, args, ps)
 }
 
-func CallUtil(util PipableCliUtil, args []string, inPipe io.Reader, outPipe, errPipe io.Writer) (error, int) {
-	err, code := util.ParseFlags(args, errPipe)
+func CallUtil(util CliPipable, args []string, invocation *Invocation) (error, int) {
+	err, code := util.ParseFlags(args, invocation.ErrOutPipe)
 	if err != nil {
 		return err, code
 	}
-	return util.Exec(inPipe, outPipe, errPipe)
+	return util.Invoke(invocation)
 }
 
 func PipableExists(name string) bool {
@@ -107,10 +87,10 @@ func GetNamedPipableFactory(name string) NamedPipableFactory {
 	return allPipables[name]
 }
 
-func GetPipableCliUtilFactory(name string) PipableCliUtilFactory {
+func GetCliPipableFactory(name string) CliPipableFactory {
 	namedPipableFactory := GetNamedPipableFactory(name)
-	pipableCliUtilFactory := func () PipableCliUtil {
-		return namedPipableFactory().(PipableCliUtil)
+	pipableCliUtilFactory := func () CliPipable {
+		return namedPipableFactory().(CliPipable)
 	}
 	return pipableCliUtilFactory
 
@@ -129,4 +109,12 @@ func List() []string {
 		ret = append(ret, k)
 	}
 	return ret
+}
+
+// ArchiveItem is used by tar & zip
+type ArchiveItem struct {
+	//if FileSystemPath is empty, use Data instead
+	FileSystemPath string
+	ArchivePath    string
+	Data           []byte
 }

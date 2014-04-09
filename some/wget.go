@@ -6,6 +6,6 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new (wget.Wgetter) })
+	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(wget.Wgetter) })
 }
 
