@@ -3,6 +3,7 @@ package someutils
 const (
 	VERSION = "0.5.1-snapshot"
 )
+
 /*
 // The CliUtil can be registered as a commandline tool, but NOT a pipeline-able function
 type CliUtil interface {
@@ -11,15 +12,9 @@ type CliUtil interface {
 }
 */
 
-
-
-
-
-
-
 var (
-	allCliUtils        = make(map[string]CliPipable)
-	allPipables = make(map[string]NamedPipableFactory)
+	allCliUtils = make(map[string]CliPipable)
+	allPipables = make(map[string]CliPipableFactory)
 )
 
 // Registers utils for use by 'some' command.
@@ -27,11 +22,11 @@ func Register(u CliPipable) {
 	allCliUtils[u.Name()] = u
 }
 func RegisterSimple(somefunc CliPipableSimpleFactory) {
-	RegisterPipable(func() NamedPipable { return WrapNamed(somefunc()) })
-	Register(WrapUtil(somefunc()))
+	RegisterPipable(func() CliPipable { return WrapCliPipable(somefunc()) })
+	Register(WrapCliPipable(somefunc()))
 }
 
-func RegisterPipable(somefunc NamedPipableFactory) {
+func RegisterPipable(somefunc CliPipableFactory) {
 	pipable := somefunc()
 	name := pipable.Name()
 	allPipables[name] = somefunc
@@ -41,14 +36,14 @@ func RegisterPipable(somefunc NamedPipableFactory) {
 	if ok {
 		//inPipe, outPipe, errPipe := StdPipes()
 		Register(pcu)
-			/*CliUtil{ func () string { return name }, func(call []string) error {
-			someutil := somefunc()
-			err := pcu.ParseFlags(call, errPipe)
-			if err != nil {
-				return err
-			}
-			err = pcu.Exec(inPipe, outPipe, errPipe)
-			return err*/
+		/*CliUtil{ func () string { return name }, func(call []string) error {
+		someutil := somefunc()
+		err := pcu.ParseFlags(call, errPipe)
+		if err != nil {
+			return err
+		}
+		err = pcu.Exec(inPipe, outPipe, errPipe)
+		return err*/
 	}
 }
 
@@ -83,21 +78,23 @@ func PipableExists(name string) bool {
 	return exists
 }
 
-func GetNamedPipableFactory(name string) NamedPipableFactory {
+func GetCliPipableFactory(name string) CliPipableFactory {
 	return allPipables[name]
 }
-
+/*
 func GetCliPipableFactory(name string) CliPipableFactory {
-	namedPipableFactory := GetNamedPipableFactory(name)
-	pipableCliUtilFactory := func () CliPipable {
+	namedPipableFactory := GetCliPipableFactory(name)
+	pipableCliUtilFactory := func() CliPipable {
 		return namedPipableFactory().(CliPipable)
 	}
 	return pipableCliUtilFactory
 
 }
+*/
+
 func GetPipableFactory(name string) PipableFactory {
-	namedPipableFactory := GetNamedPipableFactory(name)
-	pipableFactory := func () Pipable {
+	namedPipableFactory := GetCliPipableFactory(name)
+	pipableFactory := func() Pipable {
 		return namedPipableFactory()
 	}
 	return pipableFactory

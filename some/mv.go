@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeMv) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeMv) })
 }
 
 // SomeMv represents and performs a `mv` invocation

@@ -15,6 +15,7 @@ type PipeRedirector struct {
 	isAppend              bool
 	Filename              string
 }
+
 /*
 // ErrPipeRedirector redirects the previous Execable's 'err' pipe
 type ErrPipeRedirector struct {

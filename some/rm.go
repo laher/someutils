@@ -12,7 +12,7 @@ import (
 
 func init() {
 
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeRm) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeRm) })
 }
 
 // SomeRm represents and performs a `rm` invocation

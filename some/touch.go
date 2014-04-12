@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTouch) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeTouch) })
 }
 
 // SomeTouch represents and performs a `touch` invocation

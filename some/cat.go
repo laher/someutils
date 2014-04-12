@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeCat) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeCat) })
 }
 
 // SomeCat represents and performs a `cat` invocation
@@ -118,7 +118,7 @@ func NewCat() *SomeCat {
 	return new(SomeCat)
 }
 
-func Cat(fileNames ...string) someutils.NamedPipable {
+func Cat(fileNames ...string) someutils.CliPipable {
 	cat := NewCat()
 	cat.FileNames = fileNames
 	return (cat)

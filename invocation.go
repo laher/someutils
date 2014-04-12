@@ -9,20 +9,19 @@ import (
 	"strings"
 )
 
-
 // A set of invocation (In, Out, ErrOut, and even ErrIn (but ErrIn is usually only used by the special 'Redirector' util)
 // Note that Pipables are not expected to use this type (Pipables should not need any dependency on someutils - just the implicit implementation of the Pipable interface)
 type Invocation struct {
-	Pipeline *Pipeline
-	Pipable Pipable
-	InPipe    io.Reader
-	OutPipe   io.Writer
-	ErrInPipe io.Reader
-	ErrOutPipe   io.Writer
+	Pipeline       *Pipeline
+	Pipable        Pipable
+	InPipe         io.Reader
+	OutPipe        io.Writer
+	ErrInPipe      io.Reader
+	ErrOutPipe     io.Writer
 	SignalReceiver chan int
-	ExitCode *int
-	Err error
-	Closed bool
+	ExitCode       *int
+	Err            error
+	Closed         bool
 }
 
 func (i *Invocation) AutoPipeErrInOut() {
@@ -31,7 +30,7 @@ func (i *Invocation) AutoPipeErrInOut() {
 
 //TODO!!
 func (i *Invocation) AutoHandleSignals() {
-//	go handleSignals(i)
+	//	go handleSignals(i)
 }
 
 func (i *Invocation) Pipe(pipable Pipable) (error, int) {
@@ -51,8 +50,6 @@ func (i *Invocation) PipeToPipeline(pipeline *Pipeline) (error, chan *Invocation
 	return nil, invocationChannel, count
 }
 
-
-
 //warning. This closes a channel. Don't call it twice - panic ensues!
 func (i *Invocation) Close() error {
 	if i.Closed {
@@ -63,52 +60,51 @@ func (i *Invocation) Close() error {
 	if ok {
 		err := closer.Close()
 		//never mind
-		if err!=nil {
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "Could not close inPipe (", err, ")")
 		}
 	} else {
-//		fmt.Fprintln(os.Stderr, "inPipe not a Closer")
+		//		fmt.Fprintln(os.Stderr, "inPipe not a Closer")
 	}
 	closer, ok = i.OutPipe.(io.Closer)
 	if ok {
 		err := closer.Close()
 		//never mind
-		if err!= nil {
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "Could not close outPipe (", err, ")")
 		}
 	} else {
-//		fmt.Fprintln(os.Stderr, "outPipe not a Closer")
+		//		fmt.Fprintln(os.Stderr, "outPipe not a Closer")
 	}
 	closer, ok = i.ErrInPipe.(io.Closer)
 	if ok {
 		err := closer.Close()
 		//never mind
-		if err!= nil {
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "Could not close errInPipe (", err, ")")
 		}
 	} else {
-//		fmt.Fprintln(os.Stderr, "errInPipe not a Closer")
+		//		fmt.Fprintln(os.Stderr, "errInPipe not a Closer")
 	}
 	closer, ok = i.ErrOutPipe.(io.Closer)
 	if ok {
 		err := closer.Close()
 		//never mind
-		if err!= nil {
+		if err != nil {
 			fmt.Fprintln(os.Stderr, "Could not close errOutPipe (", err, ")")
 		}
 	} else {
-//		fmt.Fprintln(os.Stderr, "errOutPipe not a Closer")
+		//		fmt.Fprintln(os.Stderr, "errOutPipe not a Closer")
 	}
-/*
-	i.SignalReceiver <- 9
-	close(i.SignalReceiver)
-*/
+	/*
+		i.SignalReceiver <- 9
+		close(i.SignalReceiver)
+	*/
 	return nil
 }
 
-
 // Convenience method returns the Stdin/Stdout/Stderr invocation associated with this process
-func StdInvocation() (*Invocation) {
+func StdInvocation() *Invocation {
 	ps := new(Invocation)
 	ps.InPipe = os.Stdin
 	ps.OutPipe = os.Stdout
@@ -127,7 +123,6 @@ func StdInvoke(pcu CliPipable, call []string) (error, int) {
 	}
 	return invocation.Pipe(pcu)
 }
-
 
 // Factory for a pipeline with the given invocation
 func NewInvocation(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) *Invocation {

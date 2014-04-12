@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGzip) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeGzip) })
 }
 
 // SomeGzip represents and performs a `gzip` invocation
@@ -135,14 +135,14 @@ func (gz *SomeGzip) doGzip(reader io.Reader, writer io.Writer, filename string) 
 }
 
 // Factory for *SomeGzip
-func Gzip(args ...string) someutils.NamedPipable {
+func Gzip(args ...string) someutils.CliPipable {
 	gz := new(SomeGzip)
 	gz.Filenames = args
 	return (gz)
 }
 
 // Factory for *SomeGzip
-func GzipTo(outFile string) someutils.NamedPipable {
+func GzipTo(outFile string) someutils.CliPipable {
 	gz := new(SomeGzip)
 	gz.outFile = outFile
 	return (gz)

@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeCp) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeCp) })
 }
 
 // SomeCp represents and performs a `cp` invocation

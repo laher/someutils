@@ -10,4 +10,3 @@ import (
 func init() {
 	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(scp.SecureCopier) })
 }
-

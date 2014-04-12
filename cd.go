@@ -23,7 +23,7 @@ func (cd *SomeCd) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet.SetOutput(errPipe)
 
 	// TODO add flags here
-	
+
 	err := flagSet.Parse(call[1:])
 	if err != nil {
 		fmt.Fprintf(errPipe, "Flag error:  %v\n\n", err.Error())
@@ -34,14 +34,21 @@ func (cd *SomeCd) ParseFlags(call []string, errPipe io.Writer) error {
 	if flagSet.ProcessHelpOrVersion() {
 		return nil
 	}
-	
+
 	// TODO: validate and process flagSet.Args()
 	return nil
 }
 
 // Exec actually performs the cd
-func (cd *SomeCd) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
-	return os.Chdir(cd.destDir)
+func (cd *SomeCd) Invoke(invocation *Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
+	err := os.Chdir(cd.destDir)
+	if err != nil {
+		return err, 1
+	} else {
+		return err, 0
+	}
 }
 
 // Factory for *SomeCd
@@ -55,4 +62,3 @@ func Cd(destDir string) *SomeCd {
 	cd.destDir = destDir
 	return cd
 }
-

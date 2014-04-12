@@ -6,6 +6,7 @@ import "io"
 type Pipable interface {
 	Invoke(i *Invocation) (error, int)
 }
+
 //a PipableSimple can be executed on a pipeline when wrapped inside a PipableSimpleWrapper
 type PipableSimple interface {
 	Exec(inPipe io.Reader, outPipe io.Writer, errOutPipe io.Writer) (error, int)
@@ -26,7 +27,6 @@ type CliPipable interface {
 type PipableWrapper struct {
 	PipableSimple
 }
-
 
 type Named interface {
 	Name() string
@@ -63,7 +63,7 @@ func WrapNamed(ps NamedPipableSimple) NamedPipable {
 	return &NamedPipableSimpleWrapper{ps}
 }
 
-func WrapUtil(ps CliPipableSimple) CliPipable {
+func WrapCliPipable(ps CliPipableSimple) CliPipable {
 	return &CliPipableSimpleWrapper{ps}
 }
 
@@ -83,12 +83,10 @@ func (cpsw *CliPipableSimpleWrapper) Invoke(i *Invocation) (error, int) {
 	return invoke(cpsw.CliPipableSimple, i)
 }
 
-
 type PipableFactory func() Pipable
-type NamedPipableFactory func() NamedPipable
+
+//type NamedPipableFactory func() NamedPipable
 type CliPipableFactory func() CliPipable
 type PipableSimpleFactory func() PipableSimple
 type NamedPipableSimpleFactory func() NamedPipableSimple
 type CliPipableSimpleFactory func() CliPipableSimple
-
-

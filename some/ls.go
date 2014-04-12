@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeLs) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeLs) })
 }
 
 // SomeLs represents and performs a `ls` invocation
@@ -129,7 +129,7 @@ func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
 }
 
 // Factory for *SomeLs
-func Ls(args ...string) someutils.NamedPipable {
+func Ls(args ...string) someutils.CliPipable {
 	ls := new(SomeLs)
 	ls.globs = args
 	return (ls)

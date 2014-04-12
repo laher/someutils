@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTar) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeTar) })
 }
 
 // SomeTar represents and performs a `tar` invocation

@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeXargs) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeXargs) })
 }
 
 // SomeXargs represents and performs a `xargs` invocation

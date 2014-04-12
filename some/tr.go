@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTr) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeTr) })
 }
 
 type SomeTr struct {
@@ -157,19 +157,19 @@ func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
 func NewTr() *SomeTr {
 	return new(SomeTr)
 }
-func Tr(set1, set2 string) someutils.NamedPipable {
+func Tr(set1, set2 string) someutils.CliPipable {
 	tr := NewTr()
 	tr.SetSet1(set1)
 	tr.SetSet2(set2)
 	return (tr)
 }
-func TrD(set1 string) someutils.NamedPipable {
+func TrD(set1 string) someutils.CliPipable {
 	tr := NewTr()
 	tr.IsDelete = true
 	tr.SetSet1(set1)
 	return (tr)
 }
-func TrC(set1 string) someutils.NamedPipable {
+func TrC(set1 string) someutils.CliPipable {
 	tr := NewTr()
 	tr.IsComplement = true
 	tr.SetSet1(set1)

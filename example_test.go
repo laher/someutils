@@ -3,8 +3,8 @@ package someutils
 import (
 	"fmt"
 	"io"
-//	"os"
-//	"time"
+	//	"os"
+	//	"time"
 )
 
 type ExampleUtil struct {

@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeSleep) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeSleep) })
 }
 
 // SomeSleep represents and performs a `sleep` invocation

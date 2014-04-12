@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGrep) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeGrep) })
 }
 
 // SomeGrep represents and performs a `grep` invocation
@@ -185,7 +185,7 @@ func compile(pattern string, grep *SomeGrep) (*regexp.Regexp, error) {
 }
 
 // Factory for *SomeGrep
-func Grep(args ...string) someutils.NamedPipable {
+func Grep(args ...string) someutils.CliPipable {
 	grep := new(SomeGrep)
 	grep.pattern = args[0]
 	if len(args) > 1 {

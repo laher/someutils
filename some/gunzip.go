@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGunzip) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeGunzip) })
 }
 
 // SomeGunzip represents and performs a `gunzip` invocation

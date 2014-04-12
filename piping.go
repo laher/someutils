@@ -8,7 +8,6 @@ import (
 	"time"
 )
 
-
 func handleSignals(i *Invocation) {
 	for true {
 		select {
@@ -88,7 +87,7 @@ func execAsync(pipable Pipable, invocation *Invocation, e chan *Invocation) {
 	go func() {
 		exitCode := execSynchronous(pipable, invocation)
 		invocation.ExitCode = &exitCode
-		e<- invocation
+		e <- invocation
 	}()
 }
 
@@ -106,9 +105,10 @@ func execSynchronous(pipable Pipable, invocation *Invocation) int {
 	return code
 }
 
-const EXIT_OK=0
+const EXIT_OK = 0
+
 // Await completion, or first error
-func Wait(e chan *Invocation, count int) (*Invocation) {
+func Wait(e chan *Invocation, count int) *Invocation {
 	var lastInvocation *Invocation
 
 	if count < 1 {
@@ -135,13 +135,13 @@ func Wait(e chan *Invocation, count int) (*Invocation) {
 func NewErrorState(err error) *Invocation {
 	st := NewInvocation(nil, nil, nil)
 	st.Err = err
-	exitCode:=1
+	exitCode := 1
 	st.ExitCode = &exitCode
 	return st
 }
 
 // Await completion or error, for a duration
-func WaitFor(e chan *Invocation, count int, timeout time.Duration) (*Invocation) {
+func WaitFor(e chan *Invocation, count int, timeout time.Duration) *Invocation {
 	var lastInvocation *Invocation
 	if count < 1 {
 		return NewErrorState(errors.New("No invocations to wait for!"))
@@ -200,4 +200,3 @@ func AwaitAllErrorsFor(e chan *Invocation, count int, timeout time.Duration) (bo
 	}
 	return ok, states
 }
-

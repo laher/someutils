@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return (new(SomeBasename)) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return (new(SomeBasename)) })
 }
 
 // SomeBasename represents and performs a `basename` invocation
@@ -66,7 +66,7 @@ func (basename *SomeBasename) Invoke(invocation *someutils.Invocation) (error, i
 }
 
 // Factory for *SomeBasename
-func Basename(args ...string) someutils.NamedPipable {
+func Basename(args ...string) someutils.CliPipable {
 	basename := new(SomeBasename)
 	//basename.Xxx = args
 	return (basename)

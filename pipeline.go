@@ -5,19 +5,14 @@ import (
 	"time"
 )
 
-
-
 // Chains together the input/output of utils in a 'pipeline'
 type Pipeline struct {
 	pipables []Pipable
 }
 
-
-
 func NewPipeline(pipables ...Pipable) *Pipeline {
 	return &Pipeline{pipables}
 }
-
 
 // Run pipables in a sequence, weaving together their inputs and outputs appropriately
 func (p *Pipeline) Invoke(mainInvocation *Invocation) (chan *Invocation, int) {
@@ -60,6 +55,7 @@ func (p *Pipeline) Invoke(mainInvocation *Invocation) (chan *Invocation, int) {
 	}
 	return e, pipableIndex
 }
+
 /*
 // Intended as a subtype for Pipable which can redirect the error output of the previous command. This is treated as a special case because commands do not typically have access to this.
 type WillRedirectErrIn interface {
@@ -71,7 +67,6 @@ func (p *Pipeline) ExecAndWait(invocation *Invocation) *Invocation {
 	e, count := p.Invoke(invocation)
 	return Wait(e, count)
 }
-
 
 // Pipe and wait for errors (up until a timeout occurs)
 func (p *Pipeline) ExecAndWaitFor(invocation *Invocation, timeout time.Duration) *Invocation {

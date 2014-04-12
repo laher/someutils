@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeHead) })
+	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeHead) })
 }
 
 // SomeHead represents and performs a `head` invocation
@@ -92,7 +92,7 @@ func NewHead() *SomeHead {
 }
 
 // Factory for *SomeHead
-func Head(lines int, args ...string) someutils.NamedPipable {
+func Head(lines int, args ...string) someutils.CliPipable {
 	head := NewHead()
 	head.lines = lines
 	head.Filenames = args

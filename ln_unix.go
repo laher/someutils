@@ -10,11 +10,12 @@ import (
 )
 
 type SomeLn struct {
-	target string
-	linkName string
+	target     string
+	linkName   string
 	IsForce    bool
 	IsSymbolic bool
 }
+
 /*
 func init() {
 	Register({
@@ -52,4 +53,3 @@ func (ln *SomeLn) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) e
 		return os.Link(ln.target, ln.linkName)
 	}
 }
-
