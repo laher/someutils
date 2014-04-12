@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeCat) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeCat) })
 }
 
 // SomeCat represents and performs a `cat` invocation
@@ -61,15 +61,17 @@ func (cat *SomeCat) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 	return nil, 0
 }
 
-func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (cat *SomeCat) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if len(cat.FileNames) > 0 {
 		for _, fileName := range cat.FileNames {
 			file, err := os.Open(fileName)
-			if  err != nil {
+			if err != nil {
 				return err, 1
 			} else {
 				if cat.isStraightCopy() {
-					_, err = io.Copy(outPipe, file)
+					_, err = io.Copy(invocation.OutPipe, file)
 					if err != nil {
 						return err, 1
 					}
@@ -91,7 +93,7 @@ func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 							} else {
 								suffix = ""
 							}
-							fmt.Fprintf(outPipe, "%s%s%s\n", prefix, text, suffix)
+							fmt.Fprintf(invocation.OutPipe, "%s%s%s\n", prefix, text, suffix)
 						}
 						line++
 					}
@@ -104,7 +106,7 @@ func (cat *SomeCat) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 			}
 		}
 	} else {
-		_, err := io.Copy(outPipe, inPipe)
+		_, err := io.Copy(invocation.OutPipe, invocation.InPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -119,10 +121,10 @@ func NewCat() *SomeCat {
 func Cat(fileNames ...string) someutils.NamedPipable {
 	cat := NewCat()
 	cat.FileNames = fileNames
-	return someutils.WrapNamed(cat)
+	return (cat)
 }
 
 func CatCli(call []string) (error, int) {
 	util := new(SomeCat)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

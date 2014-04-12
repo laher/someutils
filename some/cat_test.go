@@ -1,21 +1,19 @@
 package some
 
 import (
-	"bytes"
-	"strings"
+	"github.com/laher/someutils"
 	"testing"
 )
 
 func TestCat(t *testing.T) {
-	var out bytes.Buffer
-	var errout bytes.Buffer
-	inPipe, outPipe, errPipe := strings.NewReader("HI"), &out, &errout
 	cat := NewCat()
-	err, code := cat.Exec(inPipe, outPipe, errPipe)
+	invo, outPipe, errPipe := someutils.InvocationFromString("some/text")
+	err, code := cat.Invoke(invo)
 	if err != nil {
+		t.Logf("StdErr: %s", errPipe.String())
 		t.Errorf("Error: %v - Code %d\n", err, code)
 	}
-	println(out.String())
+	println(outPipe.String())
 	// Output:
 	// HI
 }

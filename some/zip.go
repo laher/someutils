@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeZip) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeZip) })
 }
 
 // SomeZip represents and performs a `zip` invocation
@@ -45,7 +45,9 @@ func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 }
 
 // Exec actually performs the zip
-func (z *SomeZip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (z *SomeZip) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {
 		return err, 1
@@ -159,5 +161,5 @@ func Zip(args ...string) *SomeZip {
 // CLI invocation for *SomeZip
 func ZipCli(call []string) (error, int) {
 	util := new(SomeZip)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

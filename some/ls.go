@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeLs) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeLs) })
 }
 
 // SomeLs represents and performs a `ls` invocation
@@ -62,9 +62,11 @@ func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the ls
-func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
-	out := tabwriter.NewWriter(outPipe, 4, 4, 1, ' ', 0)
-	args, err := getDirList(ls.globs, ls, inPipe, outPipe, errPipe)
+func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
+	out := tabwriter.NewWriter(invocation.OutPipe, 4, 4, 1, ' ', 0)
+	args, err := getDirList(ls.globs, ls, invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe)
 	if err != nil {
 		return err, 1
 	}
@@ -76,7 +78,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 			strings.HasPrefix(arg, "..") || "." == arg {
 			argInfo, err := os.Stat(arg)
 			if err != nil {
-				fmt.Fprintln(errPipe, "stat failed for ", arg)
+				fmt.Fprintln(invocation.ErrOutPipe, "stat failed for ", arg)
 				return err, 1
 			}
 			if argInfo.IsDir() {
@@ -107,7 +109,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 					}
 				}
 
-				err := list(out, errPipe, dir, "", ls, &counter)
+				err := list(out, invocation.ErrOutPipe, dir, "", ls, &counter)
 				if err != nil {
 					return err, 1
 				}
@@ -116,7 +118,7 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 				}
 			} else {
 
-				listItem(argInfo, out, errPipe, filepath.Dir(arg), "", ls, &counter)
+				listItem(argInfo, out, invocation.ErrOutPipe, filepath.Dir(arg), "", ls, &counter)
 			}
 			lastWasDir = argInfo.IsDir()
 		}
@@ -130,16 +132,16 @@ func (ls *SomeLs) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 func Ls(args ...string) someutils.NamedPipable {
 	ls := new(SomeLs)
 	ls.globs = args
-	return someutils.WrapNamed(ls)
+	return (ls)
 }
 func LsFact() someutils.CliPipable {
-	return someutils.WrapUtil(new(SomeLs))
+	return (new(SomeLs))
 }
 
 // CLI invocation for *SomeLs
 func LsCli(call []string) (error, int) {
 	util := new(SomeLs)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }
 
 func getDirList(globs []string, ls *SomeLs, inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) ([]string, error) {

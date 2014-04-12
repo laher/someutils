@@ -14,8 +14,8 @@ func init() {
 
 // SomeXargs represents and performs a `xargs` invocation
 type SomeXargs struct {
-	utilFactory someutils.CliPipableFactory
-	utilArgs []string
+	utilFactory  someutils.CliPipableFactory
+	utilArgs     []string
 	maxProcesses int
 }
 
@@ -97,7 +97,7 @@ func (xargs *SomeXargs) Invoke(invocation *someutils.Invocation) (error, int) {
 }
 
 func (xargs *SomeXargs) newArgset(cmdName string) []string {
-	args := []string{ cmdName }
+	args := []string{cmdName}
 	args = append(args, xargs.utilArgs...)
 	return args
 }

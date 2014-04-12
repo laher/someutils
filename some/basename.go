@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterPipable(func() someutils.NamedPipable { return someutils.WrapNamed(new(SomeBasename)) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return (new(SomeBasename)) })
 }
 
 // SomeBasename represents and performs a `basename` invocation
@@ -46,16 +46,18 @@ func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) (erro
 }
 
 // Exec actually performs the basename
-func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (basename *SomeBasename) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if basename.RelativeTo != "" {
 		last := strings.LastIndex(basename.RelativeTo, basename.InputPath)
 		base := basename.InputPath[:last]
-		_, err := fmt.Fprintln(outPipe, base)
+		_, err := fmt.Fprintln(invocation.OutPipe, base)
 		if err != nil {
 			return err, 1
 		}
 	} else {
-		_, err := fmt.Fprintln(outPipe, path.Base(basename.InputPath))
+		_, err := fmt.Fprintln(invocation.OutPipe, path.Base(basename.InputPath))
 		if err != nil {
 			return err, 1
 		}
@@ -63,17 +65,15 @@ func (basename *SomeBasename) Exec(inPipe io.Reader, outPipe io.Writer, errPipe 
 	return nil, 0
 }
 
-
-
 // Factory for *SomeBasename
 func Basename(args ...string) someutils.NamedPipable {
 	basename := new(SomeBasename)
 	//basename.Xxx = args
-	return someutils.WrapNamed(basename)
+	return (basename)
 }
 
 // CLI invocation for *SomeBasename
 func BasenameCli(call []string) (error, int) {
 	basename := new(SomeBasename)
-	return someutils.StdInvoke(someutils.WrapUtil(basename), call)
+	return someutils.StdInvoke((basename), call)
 }

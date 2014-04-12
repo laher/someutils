@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGunzip) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGunzip) })
 }
 
 // SomeGunzip represents and performs a `gunzip` invocation
@@ -53,14 +53,16 @@ func (gunzip *SomeGunzip) ParseFlags(call []string, errPipe io.Writer) (error, i
 }
 
 // Exec actually performs the gunzip
-func (gunzip *SomeGunzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (gunzip *SomeGunzip) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if gunzip.IsTest {
 		err := TestGzipItems(gunzip.Filenames)
 		if err != nil {
 			return err, 1
 		}
 	} else {
-		err := gunzip.gunzipItems(inPipe, outPipe, errPipe)
+		err := gunzip.gunzipItems(invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -161,12 +163,11 @@ func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe 
 	return err
 }
 
-
 func GunzipToOut(args ...string) someutils.CliPipable {
 	gunzip := new(SomeGunzip)
 	gunzip.Filenames = args
 	gunzip.IsPipeOut = true
-	return someutils.WrapUtil(gunzip)
+	return (gunzip)
 }
 
 // Factory for *SomeGunzip
@@ -176,11 +177,11 @@ func Gunzip(args ...string) someutils.CliPipable {
 	if len(args) == 0 {
 		gunzip.IsPipeOut = true
 	}
-	return someutils.WrapUtil(gunzip)
+	return (gunzip)
 }
 
 // CLI invocation for *SomeGunzip
 func GunzipCli(call []string) (error, int) {
 	util := new(SomeGunzip)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

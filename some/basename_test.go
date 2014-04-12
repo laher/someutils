@@ -1,18 +1,16 @@
 package some
 
 import (
-	"bytes"
-	"strings"
+	"github.com/laher/someutils"
 	"testing"
 )
 
 func TestBasename(t *testing.T) {
-	var outPipe bytes.Buffer
-	var errPipe bytes.Buffer
-	inPipe := strings.NewReader("some/text")
 	basename := new(SomeBasename)
-	err, code := basename.Exec(inPipe, &outPipe, &errPipe)
+	invo, outPipe, errPipe := someutils.InvocationFromString("some/text")
+	err, code := basename.Invoke(invo)
 	if err != nil {
+		t.Logf("StdErr: %s", errPipe.String())
 		t.Errorf("Error: %v - Code %d\n", err, code)
 	}
 	println(outPipe.String())

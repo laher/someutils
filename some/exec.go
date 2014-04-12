@@ -1,9 +1,8 @@
 package some
 
 import (
-	"io"
-	"os/exec"
 	"github.com/laher/someutils"
+	"os/exec"
 )
 
 // SomeExec represents and performs a `exec` invocation
@@ -18,11 +17,13 @@ func (exe *SomeExec) Name() string {
 }
 
 // Exec actually performs the exec
-func (exe *SomeExec) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (exe *SomeExec) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	cmd := exec.Command(exe.args[0], exe.args[1:]...)
-	cmd.Stdin = inPipe
-	cmd.Stdout = outPipe
-	cmd.Stderr = errPipe
+	cmd.Stdin = invocation.InPipe
+	cmd.Stdout = invocation.OutPipe
+	cmd.Stderr = invocation.ErrOutPipe
 	err := cmd.Start()
 	if err != nil {
 		return err, 1
@@ -39,10 +40,9 @@ func (exe *SomeExec) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer
 	return err, exitCode
 }
 
-
 // Factory for *SomeExec
 func Exec(args ...string) someutils.NamedPipable {
 	exe := new(SomeExec)
 	exe.args = args
-	return someutils.WrapNamed(exe)
+	return (exe)
 }

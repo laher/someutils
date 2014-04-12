@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTail) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTail) })
 }
 
 // SomeTail represents and performs a `tail` invocation
@@ -48,7 +48,9 @@ func (tail *SomeTail) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 }
 
 // Exec actually performs the tail
-func (tail *SomeTail) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (tail *SomeTail) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if len(tail.Filenames) > 0 {
 		for _, fileName := range tail.Filenames {
 			finf, err := os.Stat(fileName)
@@ -68,7 +70,7 @@ func (tail *SomeTail) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 					return err, 1
 				}
 			}
-			end, err := tailReader(file, seek, tail, outPipe)
+			end, err := tailReader(file, seek, tail, invocation.OutPipe)
 			if err != nil {
 				file.Close()
 				return err, 1
@@ -96,7 +98,7 @@ func (tail *SomeTail) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 						return err, 1
 					}
 					if finf.Size() > end {
-						end, err = tailReader(file, end, tail, outPipe)
+						end, err = tailReader(file, end, tail, invocation.OutPipe)
 						if err != nil {
 							file.Close()
 							return err, 1
@@ -113,7 +115,7 @@ func (tail *SomeTail) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 		}
 	} else {
 		//stdin ..
-		_, err := tailReader(inPipe, 0, tail, outPipe)
+		_, err := tailReader(invocation.InPipe, 0, tail, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -177,5 +179,5 @@ func Tail(args ...string) *SomeTail {
 // CLI invocation for *SomeTail
 func TailCli(call []string) (error, int) {
 	util := new(SomeTail)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

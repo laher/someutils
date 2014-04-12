@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeSleep) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeSleep) })
 }
 
 // SomeSleep represents and performs a `sleep` invocation
@@ -49,7 +49,9 @@ func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) (error, int
 }
 
 // Exec actually performs the sleep
-func (sleep *SomeSleep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (sleep *SomeSleep) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	var unitDur time.Duration
 	switch sleep.unit {
 	case "d":
@@ -85,6 +87,6 @@ func Sleep(amount int, unit string) *SomeSleep {
 func SleepCli(call []string) (error, int) {
 
 	util := new(SomeSleep)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 
 }

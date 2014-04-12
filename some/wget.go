@@ -8,4 +8,3 @@ import (
 func init() {
 	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(wget.Wgetter) })
 }
-

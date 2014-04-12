@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeWc) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeWc) })
 }
 
 // SomeWc represents and performs a `wc` invocation
@@ -25,7 +25,6 @@ type SomeWc struct {
 func (wc *SomeWc) Name() string {
 	return "wc"
 }
-
 
 // ParseFlags parses flags from a commandline []string
 func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) (error, int) {
@@ -48,7 +47,9 @@ func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 }
 
 // Exec actually performs the wc
-func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (wc *SomeWc) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if len(wc.args) > 0 {
 		//treat no args as all args
 		if !wc.IsWords && !wc.IsLines && !wc.IsBytes {
@@ -75,13 +76,13 @@ func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 				return err, 1
 			}
 			if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(outPipe, "%d %s\n", words, fileName)
+				fmt.Fprintf(invocation.OutPipe, "%d %s\n", words, fileName)
 			} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(outPipe, "%d %s\n", lines, fileName)
+				fmt.Fprintf(invocation.OutPipe, "%d %s\n", lines, fileName)
 			} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-				fmt.Fprintf(outPipe, "%d %s\n", bytes, fileName)
+				fmt.Fprintf(invocation.OutPipe, "%d %s\n", bytes, fileName)
 			} else {
-				fmt.Fprintf(outPipe, "%d %d %d %s\n", lines, words, bytes, fileName)
+				fmt.Fprintf(invocation.OutPipe, "%d %d %d %s\n", lines, words, bytes, fileName)
 			}
 		}
 	} else {
@@ -92,18 +93,18 @@ func (wc *SomeWc) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 		bytes := int64(0)
 		words := int64(0)
 		lines := int64(0)
-		err := countWords(inPipe, wc, &bytes, &words, &lines)
+		err := countWords(invocation.InPipe, wc, &bytes, &words, &lines)
 		if err != nil {
 			return err, 1
 		}
 		if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(outPipe, "%d\n", words)
+			fmt.Fprintf(invocation.OutPipe, "%d\n", words)
 		} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(outPipe, "%d\n", lines)
+			fmt.Fprintf(invocation.OutPipe, "%d\n", lines)
 		} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-			fmt.Fprintf(outPipe, "%d\n", bytes)
+			fmt.Fprintf(invocation.OutPipe, "%d\n", bytes)
 		} else {
-			fmt.Fprintf(outPipe, "%d %d %d\n", lines, words, bytes)
+			fmt.Fprintf(invocation.OutPipe, "%d %d %d\n", lines, words, bytes)
 		}
 	}
 	return nil, 0
@@ -157,5 +158,5 @@ func Wc(args ...string) *SomeWc {
 // CLI invocation for *SomeWc
 func WcCli(call []string) (error, int) {
 	util := new(SomeWc)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

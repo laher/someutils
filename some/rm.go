@@ -12,7 +12,7 @@ import (
 
 func init() {
 
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeRm) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeRm) })
 }
 
 // SomeRm represents and performs a `rm` invocation
@@ -43,7 +43,9 @@ func (rm *SomeRm) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the rm
-func (rm *SomeRm) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (rm *SomeRm) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	for _, fileGlob := range rm.fileGlobs {
 		files, err := filepath.Glob(fileGlob)
 		if err != nil {
@@ -91,8 +93,6 @@ func deleteDir(dir string) error {
 	return nil
 }
 
-
-
 // Factory for *SomeRm
 func Rm(args ...string) *SomeRm {
 	rm := new(SomeRm)
@@ -103,5 +103,5 @@ func Rm(args ...string) *SomeRm {
 // CLI invocation for *SomeRm
 func RmCli(call []string) (error, int) {
 	util := new(SomeRm)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

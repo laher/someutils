@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTee) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTee) })
 }
 
 // SomeTee represents and performs a `tee` invocation
@@ -41,7 +41,9 @@ func (tee *SomeTee) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the tee
-func (tee *SomeTee) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (tee *SomeTee) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	flag := os.O_CREATE
 	if tee.isAppend {
 		flag = flag | os.O_APPEND
@@ -51,12 +53,12 @@ func (tee *SomeTee) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 	if err != nil {
 		return err, 1
 	}
-	writers := []io.Writer{outPipe}
+	writers := []io.Writer{invocation.OutPipe}
 	for _, file := range files {
 		writers = append(writers, file)
 	}
 	multiwriter := io.MultiWriter(writers...)
-	_, err = io.Copy(multiwriter, inPipe)
+	_, err = io.Copy(multiwriter, invocation.InPipe)
 	if err != nil {
 		return err, 1
 	}
@@ -86,5 +88,5 @@ func Tee(args ...string) *SomeTee {
 func TeeCli(call []string) (error, int) {
 
 	util := new(SomeTee)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeWhich) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeWhich) })
 }
 
 // SomeWhich represents and performs a `which` invocation
@@ -43,14 +43,16 @@ func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) (error, i
 }
 
 // Exec actually performs the which
-func (which *SomeWhich) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (which *SomeWhich) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	path := os.Getenv("PATH")
 	if runtime.GOOS == "windows" {
 		path = ".;" + path
 	}
 	pl := filepath.SplitList(path)
 	for _, arg := range which.args {
-		checkPathParts(arg, pl, which, outPipe)
+		checkPathParts(arg, pl, which, invocation.OutPipe)
 	}
 	return nil, 0
 
@@ -105,5 +107,5 @@ func Which(args ...string) *SomeWhich {
 // CLI invocation for *SomeWhich
 func WhichCli(call []string) (error, int) {
 	util := new(SomeWhich)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

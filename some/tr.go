@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTr) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTr) })
 }
 
 type SomeTr struct {
@@ -113,7 +113,9 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 	return inputs, nil
 }
 
-func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	/*
 		inputs, err := convertSet1(tr.Set1)
 		if err != nil {
@@ -145,7 +147,7 @@ func (tr *SomeTr) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 	//fmt.Printf("from %v\n", tr.inputs)
 	//fmt.Printf("to %v\n", tr.outputs)
 
-	err := someutils.LineProcessor(inPipe, outPipe, errPipe, fu)
+	err := someutils.LineProcessor(invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe, fu)
 	if err != nil {
 		return err, 1
 	}
@@ -159,23 +161,23 @@ func Tr(set1, set2 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.SetSet1(set1)
 	tr.SetSet2(set2)
-	return someutils.WrapNamed(tr)
+	return (tr)
 }
 func TrD(set1 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.IsDelete = true
 	tr.SetSet1(set1)
-	return someutils.WrapNamed(tr)
+	return (tr)
 }
 func TrC(set1 string) someutils.NamedPipable {
 	tr := NewTr()
 	tr.IsComplement = true
 	tr.SetSet1(set1)
-	return someutils.WrapNamed(tr)
+	return (tr)
 }
 
 func TrCli(call []string) (error, int) {
 
 	util := new(SomeTr)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

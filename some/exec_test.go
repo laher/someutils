@@ -13,18 +13,18 @@ func TestExecPipeline(t *testing.T) {
 	invocationChan, count := pipeline.Invoke(invocation)
 
 	//err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-/*
-	if err != nil {
-		fmt.Printf("error piping to pipeline: %v", err)
-	}
-*/
+	/*
+		if err != nil {
+			fmt.Printf("error piping to pipeline: %v", err)
+		}
+	*/
 	//err, code, index := pipeline.execandwait()
-	errinvocation := someutils.WaitFor(invocationChan, count, 1 * time.Second)
+	errinvocation := someutils.WaitFor(invocationChan, count, 1*time.Second)
 	outstring := out.String()
 	if errinvocation == nil {
 		t.Errorf("WaitFor returned nil")
 	}
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		fmt.Printf("errout: %+v\n", errout.String())
 		fmt.Printf("stdout: %+v", outstring)
 		fmt.Printf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)

@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeHead) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeHead) })
 }
 
 // SomeHead represents and performs a `head` invocation
@@ -41,7 +41,9 @@ func (head *SomeHead) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 }
 
 // Exec actually performs the head
-func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (head *SomeHead) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	//TODO do something here!
 	if len(head.Filenames) > 0 {
 		for _, fileName := range head.Filenames {
@@ -49,7 +51,7 @@ func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 			if err != nil {
 				return err, 1
 			}
-			err = headFile(file, head, outPipe)
+			err = headFile(file, head, invocation.OutPipe)
 			if err != nil {
 				file.Close()
 				return err, 1
@@ -61,7 +63,7 @@ func (head *SomeHead) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 		}
 	} else {
 		//stdin ..
-		err := headFile(inPipe, head, outPipe)
+		err := headFile(invocation.InPipe, head, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -94,11 +96,11 @@ func Head(lines int, args ...string) someutils.NamedPipable {
 	head := NewHead()
 	head.lines = lines
 	head.Filenames = args
-	return someutils.WrapNamed(head)
+	return (head)
 }
 
 // CLI invocation for *SomeHead
 func HeadCli(call []string) (error, int) {
 	util := new(SomeHead)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

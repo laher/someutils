@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTar) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTar) })
 }
 
 // SomeTar represents and performs a `tar` invocation
@@ -70,13 +70,15 @@ func countTrue(args ...bool) int {
 }
 
 // Exec actually performs the tar
-func (t *SomeTar) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (t *SomeTar) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	//overrideable??
 	destDir := "."
 	if t.IsCreate {
 		//OK
 		//fmt.Printf("Create %s\n", t.ArchiveFilename)
-		err := TarItems(t.ArchiveFilename, t.args, t, outPipe)
+		err := TarItems(t.ArchiveFilename, t.args, t, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -87,25 +89,25 @@ func (t *SomeTar) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 		}
 		//OK
 		//fmt.Printf("Append %s\n", t.ArchiveFilename)
-		err := TarItems(t.ArchiveFilename, t.args, t, outPipe)
+		err := TarItems(t.ArchiveFilename, t.args, t, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
 	} else if t.IsList {
 		//fmt.Println("List", t.ArchiveFilename)
-		err := TestTarItems(t.ArchiveFilename, t.args, inPipe, outPipe)
+		err := TestTarItems(t.ArchiveFilename, t.args, invocation.InPipe, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
 	} else if t.IsExtract {
 		//fmt.Println("Extract", t.ArchiveFilename)
-		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, inPipe, outPipe)
+		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, invocation.InPipe, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
 	} else {
 		return errors.New("You must use ONLY one of -c, -t or -x (create, list or extract), plus -f"), 1
-	} 
+	}
 	return nil, 0
 }
 
@@ -363,5 +365,5 @@ func Tar(archiveFilename string, args ...string) *SomeTar {
 func TarCli(call []string) (error, int) {
 
 	util := new(SomeTar)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

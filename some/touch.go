@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeTouch) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeTouch) })
 }
 
 // SomeTouch represents and performs a `touch` invocation
@@ -42,7 +42,9 @@ func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) (error, i
 }
 
 // Exec actually performs the touch
-func (touch *SomeTouch) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (touch *SomeTouch) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	for _, filename := range touch.args {
 		err := touchFile(filename)
 		if err != nil {
@@ -87,5 +89,5 @@ func Touch(args ...string) *SomeTouch {
 func TouchCli(call []string) (error, int) {
 
 	util := new(SomeTouch)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

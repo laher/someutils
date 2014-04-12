@@ -13,9 +13,9 @@ func TestPipeline1(t *testing.T) {
 	if err != nil {
 		t.Errorf("error piping to pipeline: %v", err)
 	}
-	errinvocation := WaitFor(invocationchan, count, 1 * time.Second)
+	errinvocation := WaitFor(invocationchan, count, 1*time.Second)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
@@ -39,7 +39,7 @@ func TestPipeline2(t *testing.T) {
 	}
 	errinvocation := Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
@@ -64,7 +64,7 @@ func TestRedirect1(t *testing.T) {
 	}
 	errinvocation := Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
@@ -88,7 +88,7 @@ func TestRedirectOutErr(t *testing.T) {
 	}
 	errinvocation := Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
@@ -118,7 +118,7 @@ func TestRedirectOutNull(t *testing.T) {
 	}
 	errinvocation := Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
@@ -145,7 +145,7 @@ func TestRedirectOutErrErrOut(t *testing.T) {
 	}
 	errinvocation := Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)

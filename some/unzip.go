@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeUnzip) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeUnzip) })
 }
 
 // SomeUnzip represents and performs a `unzip` invocation
@@ -55,14 +55,16 @@ func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) (error, i
 }
 
 // Exec actually performs the unzip
-func (unzip *SomeUnzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (unzip *SomeUnzip) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if unzip.isTest {
-		err := TestItems(unzip.zipname, unzip.files, outPipe, errPipe)
+		err := TestItems(unzip.zipname, unzip.files, invocation.OutPipe, invocation.ErrOutPipe)
 		if err != nil {
 			return err, 1
 		}
 	} else {
-		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, errPipe)
+		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, invocation.ErrOutPipe)
 		if err != nil {
 			return err, 1
 		}
@@ -213,5 +215,5 @@ func Unzip(zipname string, files ...string) *SomeUnzip {
 // CLI invocation for *SomeUnzip
 func UnzipCli(call []string) (error, int) {
 	util := new(SomeUnzip)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

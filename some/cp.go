@@ -10,7 +10,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeCp) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeCp) })
 }
 
 // SomeCp represents and performs a `cp` invocation
@@ -50,7 +50,9 @@ func (cp *SomeCp) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the cp
-func (cp *SomeCp) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (cp *SomeCp) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	for _, srcGlob := range cp.SrcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
@@ -184,5 +186,5 @@ func Cp(args ...string) *SomeCp {
 // CLI invocation for *SomeCp
 func CpCli(call []string) (error, int) {
 	util := new(SomeCp)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

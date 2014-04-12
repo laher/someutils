@@ -14,7 +14,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGrep) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGrep) })
 }
 
 // SomeGrep represents and performs a `grep` invocation
@@ -74,7 +74,9 @@ func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 }
 
 // Exec actually performs the grep
-func (grep *SomeGrep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (grep *SomeGrep) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	reg, err := compile(grep.pattern, grep)
 	if err != nil {
 		return err, 1
@@ -91,14 +93,14 @@ func (grep *SomeGrep) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Write
 			}
 			files = append(files, results...)
 		}
-		err = grepAll(reg, files, grep, outPipe)
+		err = grepAll(reg, files, grep, invocation.OutPipe)
 		if err != nil {
 			return err, 1
 		}
 	} else {
 		if uggo.IsPipingStdin() {
 			//check STDIN
-			err = grepReader(inPipe, "", reg, grep, outPipe)
+			err = grepReader(invocation.InPipe, "", reg, grep, invocation.OutPipe)
 			if err != nil {
 				return err, 1
 			}
@@ -182,21 +184,20 @@ func compile(pattern string, grep *SomeGrep) (*regexp.Regexp, error) {
 	}
 }
 
-
 // Factory for *SomeGrep
 func Grep(args ...string) someutils.NamedPipable {
-	grep := new (SomeGrep)
+	grep := new(SomeGrep)
 	grep.pattern = args[0]
 	if len(args) > 1 {
 		grep.globs = args[1:]
 	} else {
 		grep.globs = []string{}
 	}
-	return someutils.WrapNamed(grep)
+	return (grep)
 }
 
 // CLI invocation for *SomeGrep
 func GrepCli(call []string) (error, int) {
 	util := new(SomeGrep)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

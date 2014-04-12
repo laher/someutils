@@ -11,15 +11,15 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeGzip) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeGzip) })
 }
 
 // SomeGzip represents and performs a `gzip` invocation
 type SomeGzip struct {
-	IsKeep bool
-	IsStdout bool
+	IsKeep    bool
+	IsStdout  bool
 	Filenames []string
-	outFile string
+	outFile   string
 }
 
 // Name() returns the name of the util
@@ -50,7 +50,9 @@ func (gz *SomeGzip) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the gzip
-func (gz *SomeGzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (gz *SomeGzip) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	if len(gz.Filenames) == 0 {
 		//pipe in?
 		var writer io.Writer
@@ -64,9 +66,9 @@ func (gz *SomeGzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 			}
 		} else {
 			outputFilename = ""
-			writer = outPipe
+			writer = invocation.OutPipe
 		}
-		err := gz.doGzip(inPipe, writer, filepath.Base(outputFilename))
+		err := gz.doGzip(invocation.InPipe, writer, filepath.Base(outputFilename))
 		if err != nil {
 			return err, 1
 		}
@@ -89,7 +91,7 @@ func (gz *SomeGzip) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer)
 				defer gzf.Close()
 				writer = gzf
 			} else {
-				writer = outPipe
+				writer = invocation.OutPipe
 			}
 			err = gz.doGzip(inputFile, writer, filepath.Base(inputFilename))
 			if err != nil {
@@ -136,18 +138,18 @@ func (gz *SomeGzip) doGzip(reader io.Reader, writer io.Writer, filename string) 
 func Gzip(args ...string) someutils.NamedPipable {
 	gz := new(SomeGzip)
 	gz.Filenames = args
-	return someutils.WrapNamed(gz)
+	return (gz)
 }
 
 // Factory for *SomeGzip
 func GzipTo(outFile string) someutils.NamedPipable {
 	gz := new(SomeGzip)
 	gz.outFile = outFile
-	return someutils.WrapNamed(gz)
+	return (gz)
 }
 
 // CLI invocation for *SomeGzip
 func GzipCli(call []string) (error, int) {
 	util := new(SomeGzip)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

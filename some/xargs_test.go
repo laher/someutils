@@ -16,9 +16,9 @@ func TestXargsPipeline(t *testing.T) {
 	outstring := out.String()
 	if errinvocation == nil {
 
-			t.Errorf("Wait returned nil. Expecting %d invocations", count)
+		t.Errorf("Wait returned nil. Expecting %d invocations", count)
 	}
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)

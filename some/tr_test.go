@@ -18,12 +18,15 @@ func TestTrCli(t *testing.T) {
 	}
 	//println(out.String())
 }
+
 /*
 func TestFluentTr(t *testing.T) {
 	var out bytes.Buffer
 	var errout bytes.Buffer
 	inPipe, outPipe, errPipe := strings.NewReader("HI"), &out, &errout
-	err, code := Tr("I", "O").Exec(inPipe, outPipe, errPipe)
+	err, code := Tr("I", "O").Invoke(invocation *someutils.Invocation) (error, int) {
+invocation.AutoPipeErrInOut()
+invocation.AutoHandleSignals()
 	if err != nil {
 		if code != 0 {
 			t.Errorf("Error: %v, code: %d\n", err, code)
@@ -42,8 +45,12 @@ func Test2pipes(t *testing.T) {
 	inPipe2, outPipe2, errPipe2 := r, &out, &errout
 	tr1 := Tr("H", "O")
 	tr2 := Tr("I", "J")
-	go tr1.Exec(inPipe1, outPipe1, errPipe1)
-	go tr2.Exec(inPipe2, outPipe2, errPipe2)
+	go tr1.Invoke(invocation *someutils.Invocation) (error, int) {
+invocation.AutoPipeErrInOut()
+invocation.AutoHandleSignals()
+	go tr2.Invoke(invocation *someutils.Invocation) (error, int) {
+invocation.AutoPipeErrInOut()
+invocation.AutoHandleSignals()
 	time.Sleep(1 * time.Second)
 	output := out.String()
 	expected := "Oi\nOo\nhJ\nhO\n"
@@ -62,7 +69,7 @@ func TestTrPipeline(t *testing.T) {
 	}
 	errinvocation := someutils.Wait(invocationchan, count)
 	outstring := out.String()
-	if errinvocation.Err!=nil {
+	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
 		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)

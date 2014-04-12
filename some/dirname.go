@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeDirname) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeDirname) })
 }
 
 // SomeDirname represents and performs a `dirname` invocation
@@ -36,10 +36,12 @@ func (dirname *SomeDirname) ParseFlags(call []string, errPipe io.Writer) (error,
 }
 
 // Exec actually performs the dirname
-func (dirname *SomeDirname) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (dirname *SomeDirname) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	for _, f := range dirname.Filenames {
 		dir := path.Dir(f)
-		fmt.Fprintln(outPipe, dir)
+		fmt.Fprintln(invocation.OutPipe, dir)
 	}
 	return nil, 0
 }
@@ -59,5 +61,5 @@ func Dirname(args ...string) *SomeDirname {
 // CLI invocation for *SomeDirname
 func DirnameCli(call []string) (error, int) {
 	util := new(SomeDirname)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

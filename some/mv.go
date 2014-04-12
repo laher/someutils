@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomeMv) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomeMv) })
 }
 
 // SomeMv represents and performs a `mv` invocation
@@ -50,7 +50,9 @@ func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the mv
-func (mv *SomeMv) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (mv *SomeMv) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	for _, srcGlob := range mv.srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
 		if err != nil {
@@ -63,7 +65,7 @@ func (mv *SomeMv) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (
 		for _, src := range srces {
 			err = moveFile(src, mv.dest)
 			if err != nil {
-				fmt.Fprintf(errPipe, "Error %v\n", err)
+				fmt.Fprintf(invocation.ErrOutPipe, "Error %v\n", err)
 				return err, 1
 			}
 		}
@@ -127,5 +129,5 @@ func Mv(args ...string) *SomeMv {
 func MvCli(call []string) (error, int) {
 
 	util := new(SomeMv)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }

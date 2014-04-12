@@ -9,7 +9,7 @@ import (
 )
 
 func init() {
-	someutils.RegisterSimple(func() someutils.CliPipableSimple { return new(SomePwd) })
+	someutils.RegisterPipable(func() someutils.NamedPipable { return new(SomePwd) })
 }
 
 // SomePwd represents and performs a `pwd` invocation
@@ -37,15 +37,16 @@ func (pwd *SomePwd) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 // Exec actually performs the pwd
-func (pwd *SomePwd) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int) {
+func (pwd *SomePwd) Invoke(invocation *someutils.Invocation) (error, int) {
+	invocation.AutoPipeErrInOut()
+	invocation.AutoHandleSignals()
 	wd, err := os.Getwd()
 	if err != nil {
 		return err, 1
 	}
-	fmt.Fprintln(outPipe, wd)
+	fmt.Fprintln(invocation.OutPipe, wd)
 	return nil, 0
 }
-
 
 // Factory for *SomePwd
 func Pwd(args ...string) *SomePwd {
@@ -56,5 +57,5 @@ func Pwd(args ...string) *SomePwd {
 // CLI invocation for *SomePwd
 func PwdCli(call []string) (error, int) {
 	util := new(SomePwd)
-	return someutils.StdInvoke(someutils.WrapUtil(util), call)
+	return someutils.StdInvoke((util), call)
 }
