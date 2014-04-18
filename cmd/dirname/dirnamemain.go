@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	"github.com/laher/someutils/some"
 	"os"
 )
 
 func main() {
-	err := someutils.Dirname(os.Args)
+	err, code := some.DirnameCli(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(code)
+		}
 	}
+
 }

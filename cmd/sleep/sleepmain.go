@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	"github.com/laher/someutils/some"
 	"os"
 )
 
 func main() {
-	err := someutils.Sleep(os.Args)
+	err := some.SleepCli(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

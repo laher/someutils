@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils"
+	"github.com/laher/someutils/some"
 	"os"
 )
 
 func main() {
-	err := someutils.Cp(os.Args)
+	err := some.CpCli(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

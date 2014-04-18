@@ -6,7 +6,14 @@ Some CLI utilities written in Go.
  * Mainly intended as Unix-like commands for Windows, but cross-platform anyway. 
  * Covers similar ground to coreutils, but not intended as a replacement. (Won't ever support all commands & options).
  * Just because.
- * WARNING: someutils isn't intended for use as a library YET. The API can and will change, with the idea being to facilitate cross-platform, shell-like scripting in Go. If you're interested take a look at progress on the v0.5 branch.
+ * **WARNING: someutils isn't intended for use as a library YET. The API can and will change, with the idea being to facilitate cross-platform, shell-like scripting in Go.**
+ * New and **Experimental** in v0.5: you can use someutils as a library (but the API will change)
+
+	pipeline := someutils.NewPipeline(someutils.Wrap(wget.WgetToOut()), Head(2), Tr("h", "G"))
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("www.golang.org\n"))
+	lastOrErrInvocation := invocation.Wait()
+	fmt.Println(out.String())
+ 
 
 Installation.
 ---------
@@ -64,6 +71,7 @@ You can also use 'some [cmd] [args...]' for any of these.
  sleep   |                   | n/a            |
  tail    | -n -F             | Yes            | TODO: -c, -f (by descriptor rather than by name). Bug: won't currently print last line unless terminated by a CR.
  tar     | -cvf -x -t -r     | Yes (IN+OUT)   | Just the core functionality so far.
+ tr      |                   | Yes            | 
  tee     | -a                | Yes            | TODO: -i
  touch   |                   | n/a            | 
  unzip   | -t                | TODO(STDOUT)   | Password support would not be straightforward (not supported by standard lib)
@@ -75,7 +83,8 @@ You can also use 'some [cmd] [args...]' for any of these.
 
 ### ToMaybeDo
  * stat,size,file,type
- * split,join
+ * split,join,sort
+ * shred
  * chmod/chown (relevant? Yes I think so)
  * diff (too big? Maybe a minimal version would be good here)
  * more (how easy is it?)

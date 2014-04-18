@@ -1,32 +1,35 @@
 //+build !windows
+
 package someutils
 
 import (
 	"errors"
 	"github.com/laher/uggo"
+	"io"
 	"os"
 )
 
-type LnOptions struct {
+type SomeLn struct {
+	target     string
+	linkName   string
 	IsForce    bool
 	IsSymbolic bool
 }
 
+/*
 func init() {
-	Register(Util{
+	Register({
 		"ln",
 		Ln})
 }
-
-func Ln(call []string) error {
-	options := LnOptions{}
+*/
+func (ln *SomeLn) ParseFlags(call []string, errPipe io.Writer) error {
 	flagSet := uggo.NewFlagSetDefault("ln", "[options] TARGET LINK_NAME", VERSION)
-	flagSet.BoolVar(&options.IsSymbolic, "s", false, "Symbolic")
-	flagSet.BoolVar(&options.IsForce, "f", false, "Force")
+	flagSet.BoolVar(&ln.IsSymbolic, "s", false, "Symbolic")
+	flagSet.BoolVar(&ln.IsForce, "f", false, "Force")
 
 	e := flagSet.Parse(call[1:])
 	if e != nil {
-		println("Error parsing flags")
 		return e
 	}
 	if flagSet.ProcessHelpOrVersion() {
@@ -38,16 +41,15 @@ func Ln(call []string) error {
 		flagSet.Usage()
 		return errors.New("Not enough args!")
 	}
-	target := args[0]
-	linkName := args[1]
-	return makeLink(target, linkName, options)
-
+	ln.target = args[0]
+	ln.linkName = args[1]
+	return nil
 }
 
-func makeLink(target, linkName string, options LnOptions) error {
-	if options.IsSymbolic {
-		return os.Symlink(target, linkName)
+func (ln *SomeLn) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+	if ln.IsSymbolic {
+		return os.Symlink(ln.target, ln.linkName)
 	} else {
-		return os.Link(target, linkName)
+		return os.Link(ln.target, ln.linkName)
 	}
 }
