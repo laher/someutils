@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/laher/someutils/some"
+	"github.com/laher/scp-go/scp"
 	"os"
 )
 
 func main() {
-	err := some.ScpCli(os.Args)
+	err, status := scp.ScpCli(os.Args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		os.Exit(status)
 	}
 
 }

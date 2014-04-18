@@ -7,10 +7,12 @@ import (
 )
 
 func main() {
-	err := some.HeadCli(os.Args)
+	err, code := some.HeadCli(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(code)
+		}
 	}
 
 }

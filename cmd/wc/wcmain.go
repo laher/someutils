@@ -7,10 +7,12 @@ import (
 )
 
 func main() {
-	err := some.WcCli(os.Args)
+	err, code := some.WcCli(os.Args)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		if code != 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(code)
+		}
 	}
 
 }
