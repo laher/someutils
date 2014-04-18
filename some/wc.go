@@ -48,7 +48,7 @@ func (wc *SomeWc) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 
 // Exec actually performs the wc
 func (wc *SomeWc) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if len(wc.args) > 0 {
 		//treat no args as all args
@@ -76,13 +76,13 @@ func (wc *SomeWc) Invoke(invocation *someutils.Invocation) (error, int) {
 				return err, 1
 			}
 			if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(invocation.OutPipe, "%d %s\n", words, fileName)
+				fmt.Fprintf(invocation.MainPipe.Out, "%d %s\n", words, fileName)
 			} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-				fmt.Fprintf(invocation.OutPipe, "%d %s\n", lines, fileName)
+				fmt.Fprintf(invocation.MainPipe.Out, "%d %s\n", lines, fileName)
 			} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-				fmt.Fprintf(invocation.OutPipe, "%d %s\n", bytes, fileName)
+				fmt.Fprintf(invocation.MainPipe.Out, "%d %s\n", bytes, fileName)
 			} else {
-				fmt.Fprintf(invocation.OutPipe, "%d %d %d %s\n", lines, words, bytes, fileName)
+				fmt.Fprintf(invocation.MainPipe.Out, "%d %d %d %s\n", lines, words, bytes, fileName)
 			}
 		}
 	} else {
@@ -93,18 +93,18 @@ func (wc *SomeWc) Invoke(invocation *someutils.Invocation) (error, int) {
 		bytes := int64(0)
 		words := int64(0)
 		lines := int64(0)
-		err := countWords(invocation.InPipe, wc, &bytes, &words, &lines)
+		err := countWords(invocation.MainPipe.In, wc, &bytes, &words, &lines)
 		if err != nil {
 			return err, 1
 		}
 		if wc.IsWords && !wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(invocation.OutPipe, "%d\n", words)
+			fmt.Fprintf(invocation.MainPipe.Out, "%d\n", words)
 		} else if !wc.IsWords && wc.IsLines && !wc.IsBytes {
-			fmt.Fprintf(invocation.OutPipe, "%d\n", lines)
+			fmt.Fprintf(invocation.MainPipe.Out, "%d\n", lines)
 		} else if !wc.IsWords && !wc.IsLines && wc.IsBytes {
-			fmt.Fprintf(invocation.OutPipe, "%d\n", bytes)
+			fmt.Fprintf(invocation.MainPipe.Out, "%d\n", bytes)
 		} else {
-			fmt.Fprintf(invocation.OutPipe, "%d %d %d\n", lines, words, bytes)
+			fmt.Fprintf(invocation.MainPipe.Out, "%d %d %d\n", lines, words, bytes)
 		}
 	}
 	return nil, 0

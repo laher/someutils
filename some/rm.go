@@ -44,7 +44,7 @@ func (rm *SomeRm) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the rm
 func (rm *SomeRm) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	for _, fileGlob := range rm.fileGlobs {
 		files, err := filepath.Glob(fileGlob)

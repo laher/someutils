@@ -14,7 +14,7 @@ func init() {
 	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeGunzip) })
 }
 
-// SomeGunzip represents and performs a `gunzip` invocation
+// SomeGunzip represents and performs `gunzip` invocations
 type SomeGunzip struct {
 	IsTest    bool
 	IsKeep    bool
@@ -54,7 +54,7 @@ func (gunzip *SomeGunzip) ParseFlags(call []string, errPipe io.Writer) (error, i
 
 // Exec actually performs the gunzip
 func (gunzip *SomeGunzip) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if gunzip.IsTest {
 		err := TestGzipItems(gunzip.Filenames)
@@ -62,7 +62,7 @@ func (gunzip *SomeGunzip) Invoke(invocation *someutils.Invocation) (error, int) 
 			return err, 1
 		}
 	} else {
-		err := gunzip.gunzipItems(invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe)
+		err := gunzip.gunzipItems(invocation.MainPipe.In, invocation.MainPipe.Out, invocation.ErrPipe.Out)
 		if err != nil {
 			return err, 1
 		}
@@ -85,7 +85,7 @@ func TestGzipItems(items []string) error {
 	return nil
 }
 
-//TODO: proper file checking
+//TODO: proper file checking (how to check validity?)
 func TestGzipItem(item io.Reader) error {
 	r, err := gzip.NewReader(item)
 	if err != nil {
@@ -97,8 +97,8 @@ func TestGzipItem(item io.Reader) error {
 
 func (gunzip *SomeGunzip) gunzipItems(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
 	if len(gunzip.Filenames) == 0 {
-		//stdin
-		err := gunzip.gunzipItem(inPipe, outPipe, errPipe)
+		//in to out
+		err := gunzip.gunzipItem(inPipe, outPipe, errPipe, true)
 		if err != nil {
 			return err
 		}
@@ -108,7 +108,7 @@ func (gunzip *SomeGunzip) gunzipItems(inPipe io.Reader, outPipe io.Writer, errPi
 			if err != nil {
 				return err
 			}
-			err = gunzip.gunzipItem(fh, outPipe, errPipe)
+			err = gunzip.gunzipItem(fh, outPipe, errPipe, gunzip.IsPipeOut)
 			if err != nil {
 				return err
 			}
@@ -127,16 +127,14 @@ func (gunzip *SomeGunzip) gunzipItems(inPipe io.Reader, outPipe io.Writer, errPi
 	return nil
 }
 
-func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe io.Writer, toOut bool) error {
 	r, err := gzip.NewReader(item)
 	if err != nil {
 		return err
 	}
 	defer r.Close()
-	var w io.Writer
-	if gunzip.IsPipeOut {
-		w = outPipe
-		_, err = io.Copy(w, r)
+	if toOut {
+		_, err = io.Copy(outPipe, r)
 		if err != nil {
 			return err
 		}
@@ -148,8 +146,7 @@ func (gunzip *SomeGunzip) gunzipItem(item io.Reader, outPipe io.Writer, errPipe 
 		if err != nil {
 			return err
 		}
-		w = destFile
-		_, err = io.Copy(w, r)
+		_, err = io.Copy(destFile, r)
 		if err != nil {
 			return err
 		}

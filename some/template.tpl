@@ -43,8 +43,10 @@ func ({{.Name}} *Some{{.NameUCF}}) ParseFlags(call []string, errPipe io.Writer) 
 	return nil
 }
 
-// Exec actually performs the {{.Name}}
-func ({{.Name}} *Some{{.NameUCF}}) Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) error {
+// Invoke actually performs the {{.Name}}
+func ({{.Name}} *Some{{.NameUCF}}) Invoke(invocation *Invocation) error {
+	invocation.ErrPipe.Drain()
+	invocation.AutoHandleSignals()
 	//TODO the actual feature goes here!
 }
 

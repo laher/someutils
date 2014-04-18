@@ -44,7 +44,7 @@ func (which *SomeWhich) ParseFlags(call []string, errWriter io.Writer) (error, i
 
 // Exec actually performs the which
 func (which *SomeWhich) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	path := os.Getenv("PATH")
 	if runtime.GOOS == "windows" {
@@ -52,7 +52,7 @@ func (which *SomeWhich) Invoke(invocation *someutils.Invocation) (error, int) {
 	}
 	pl := filepath.SplitList(path)
 	for _, arg := range which.args {
-		checkPathParts(arg, pl, which, invocation.OutPipe)
+		checkPathParts(arg, pl, which, invocation.MainPipe.Out)
 	}
 	return nil, 0
 

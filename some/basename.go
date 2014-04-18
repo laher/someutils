@@ -47,17 +47,17 @@ func (basename *SomeBasename) ParseFlags(call []string, errPipe io.Writer) (erro
 
 // Exec actually performs the basename
 func (basename *SomeBasename) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if basename.RelativeTo != "" {
 		last := strings.LastIndex(basename.RelativeTo, basename.InputPath)
 		base := basename.InputPath[:last]
-		_, err := fmt.Fprintln(invocation.OutPipe, base)
+		_, err := fmt.Fprintln(invocation.MainPipe.Out, base)
 		if err != nil {
 			return err, 1
 		}
 	} else {
-		_, err := fmt.Fprintln(invocation.OutPipe, path.Base(basename.InputPath))
+		_, err := fmt.Fprintln(invocation.MainPipe.Out, path.Base(basename.InputPath))
 		if err != nil {
 			return err, 1
 		}

@@ -2,12 +2,13 @@ package some
 
 import (
 	"github.com/laher/someutils"
+	"strings"
 	"testing"
 )
 
 func TestBasename(t *testing.T) {
 	basename := new(SomeBasename)
-	invo, outPipe, errPipe := someutils.InvocationFromString("some/text")
+	invo, outPipe, errPipe := someutils.InvocationFromReader(strings.NewReader("some/text"))
 	err, code := basename.Invoke(invo)
 	if err != nil {
 		t.Logf("StdErr: %s", errPipe.String())

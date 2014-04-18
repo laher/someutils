@@ -43,7 +43,7 @@ func (touch *SomeTouch) ParseFlags(call []string, errWriter io.Writer) (error, i
 
 // Exec actually performs the touch
 func (touch *SomeTouch) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	for _, filename := range touch.args {
 		err := touchFile(filename)

@@ -41,7 +41,7 @@ func (cd *SomeCd) ParseFlags(call []string, errPipe io.Writer) error {
 
 // Exec actually performs the cd
 func (cd *SomeCd) Invoke(invocation *Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	err := os.Chdir(cd.destDir)
 	if err != nil {

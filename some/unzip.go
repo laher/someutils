@@ -56,15 +56,15 @@ func (unzip *SomeUnzip) ParseFlags(call []string, errWriter io.Writer) (error, i
 
 // Exec actually performs the unzip
 func (unzip *SomeUnzip) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if unzip.isTest {
-		err := TestItems(unzip.zipname, unzip.files, invocation.OutPipe, invocation.ErrOutPipe)
+		err := TestItems(unzip.zipname, unzip.files, invocation.MainPipe.Out, invocation.ErrPipe.Out)
 		if err != nil {
 			return err, 1
 		}
 	} else {
-		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, invocation.ErrOutPipe)
+		err := UnzipItems(unzip.zipname, unzip.destDir, unzip.files, invocation.ErrPipe.Out)
 		if err != nil {
 			return err, 1
 		}

@@ -42,7 +42,7 @@ func (tee *SomeTee) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the tee
 func (tee *SomeTee) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	flag := os.O_CREATE
 	if tee.isAppend {
@@ -53,12 +53,12 @@ func (tee *SomeTee) Invoke(invocation *someutils.Invocation) (error, int) {
 	if err != nil {
 		return err, 1
 	}
-	writers := []io.Writer{invocation.OutPipe}
+	writers := []io.Writer{invocation.MainPipe.Out}
 	for _, file := range files {
 		writers = append(writers, file)
 	}
 	multiwriter := io.MultiWriter(writers...)
-	_, err = io.Copy(multiwriter, invocation.InPipe)
+	_, err = io.Copy(multiwriter, invocation.MainPipe.In)
 	if err != nil {
 		return err, 1
 	}

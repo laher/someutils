@@ -18,12 +18,12 @@ func (exe *SomeExec) Name() string {
 
 // Exec actually performs the exec
 func (exe *SomeExec) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	cmd := exec.Command(exe.args[0], exe.args[1:]...)
-	cmd.Stdin = invocation.InPipe
-	cmd.Stdout = invocation.OutPipe
-	cmd.Stderr = invocation.ErrOutPipe
+	cmd.Stdin = invocation.MainPipe.In
+	cmd.Stdout = invocation.MainPipe.Out
+	cmd.Stderr = invocation.ErrPipe.Out
 	err := cmd.Start()
 	if err != nil {
 		return err, 1
@@ -41,7 +41,7 @@ func (exe *SomeExec) Invoke(invocation *someutils.Invocation) (error, int) {
 }
 
 // Factory for *SomeExec
-func Exec(args ...string) someutils.NamedPipable {
+func Exec(args ...string) someutils.Pipable {
 	exe := new(SomeExec)
 	exe.args = args
 	return (exe)

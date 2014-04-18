@@ -62,7 +62,7 @@ func (cat *SomeCat) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 }
 
 func (cat *SomeCat) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if len(cat.FileNames) > 0 {
 		for _, fileName := range cat.FileNames {
@@ -71,7 +71,7 @@ func (cat *SomeCat) Invoke(invocation *someutils.Invocation) (error, int) {
 				return err, 1
 			} else {
 				if cat.isStraightCopy() {
-					_, err = io.Copy(invocation.OutPipe, file)
+					_, err = io.Copy(invocation.MainPipe.Out, file)
 					if err != nil {
 						return err, 1
 					}
@@ -93,7 +93,7 @@ func (cat *SomeCat) Invoke(invocation *someutils.Invocation) (error, int) {
 							} else {
 								suffix = ""
 							}
-							fmt.Fprintf(invocation.OutPipe, "%s%s%s\n", prefix, text, suffix)
+							fmt.Fprintf(invocation.MainPipe.Out, "%s%s%s\n", prefix, text, suffix)
 						}
 						line++
 					}
@@ -106,7 +106,7 @@ func (cat *SomeCat) Invoke(invocation *someutils.Invocation) (error, int) {
 			}
 		}
 	} else {
-		_, err := io.Copy(invocation.OutPipe, invocation.InPipe)
+		_, err := io.Copy(invocation.MainPipe.Out, invocation.MainPipe.In)
 		if err != nil {
 			return err, 1
 		}

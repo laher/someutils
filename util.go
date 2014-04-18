@@ -66,7 +66,7 @@ func Call(name string, args []string) (error, int) {
 }
 
 func CallUtil(util CliPipable, args []string, invocation *Invocation) (error, int) {
-	err, code := util.ParseFlags(args, invocation.ErrOutPipe)
+	err, code := util.ParseFlags(args, invocation.ErrPipe.Out)
 	if err != nil {
 		return err, code
 	}
@@ -81,6 +81,7 @@ func PipableExists(name string) bool {
 func GetCliPipableFactory(name string) CliPipableFactory {
 	return allPipables[name]
 }
+
 /*
 func GetCliPipableFactory(name string) CliPipableFactory {
 	namedPipableFactory := GetCliPipableFactory(name)

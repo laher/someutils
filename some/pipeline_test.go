@@ -2,25 +2,27 @@ package some
 
 import (
 	. "github.com/laher/someutils"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestPipeline1(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O")) //, RedirectTo("file.txt"))
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := WaitFor(invocationchan, count, 1*time.Second)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.WaitUpTo(1 * time.Second)
 	outstring := out.String()
-	if errinvocation.Err != nil {
+	if errinvocation == nil || errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
 		t.Logf("stdout: %+v", outstring)
-		t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
-		if *errinvocation.ExitCode != 0 {
-			t.Errorf("error: %+v\n", errinvocation.Err)
+		if errinvocation == nil {
+			t.Errorf("errinvocation is nil!!!\n")
+
+		} else {
+			t.Logf("error: %+v, exit code: %d\n", errinvocation.Err, errinvocation.ExitCode)
+			if *errinvocation.ExitCode != 0 {
+				t.Errorf("error: %+v\n", errinvocation.Err)
+			}
 		}
 	}
 	output := out.String()
@@ -32,12 +34,8 @@ func TestPipeline1(t *testing.T) {
 
 func TestPipeline2(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"))
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
@@ -57,12 +55,8 @@ func TestPipeline2(t *testing.T) {
 
 func TestRedirect1(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutTo("test.txt"), Cat("test.txt"))
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
@@ -81,12 +75,8 @@ func TestRedirect1(t *testing.T) {
 
 func TestRedirectOutErr(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr())
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
@@ -105,18 +95,11 @@ func TestRedirectOutErr(t *testing.T) {
 		t.Error("Expected\n ", expected, ", Got:\n ", outputErr)
 	}
 }
+
 func TestRedirectOutNull(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToNull())
-	//pipeline := NewPipeline(Tr("H", "O"), OutToNull())
-	//pipeline := NewPipeline(Tr("H", "O"), OutToNull())
-	//pipeline := NewPipeline(OutToNull())
-	//go closef()
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
@@ -136,14 +119,11 @@ func TestRedirectOutNull(t *testing.T) {
 		t.Error("Expected\n ", expected, ", Got:\n ", output)
 	}
 }
+
 func TestRedirectOutErrErrOut(t *testing.T) {
 	pipeline := NewPipeline(Tr("H", "O"), Tr("I", "J"), Grep("O"), OutToErr(), ErrToOut())
-	invocation, out, errout := InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())
@@ -155,9 +135,9 @@ func TestRedirectOutErrErrOut(t *testing.T) {
 	}
 	output := out.String()
 	expected := "Oi\nOo\nhO\n"
-	t.Logf("Errout: %+v", errout.String())
-	t.Logf("Stdout: %+v", output)
 	if output != expected {
+		t.Logf("Errout: %+v", errout.String())
+		t.Logf("Stdout: %+v", output)
 		t.Error("Expected\n ", expected, ", Got:\n ", output)
 	}
 }

@@ -3,23 +3,15 @@ package some
 import (
 	"fmt"
 	"github.com/laher/someutils"
+	"strings"
 	"testing"
 	"time"
 )
 
 func TestExecPipeline(t *testing.T) {
 	pipeline := someutils.NewPipeline(Exec("go", "help"))
-	invocation, out, errout := someutils.InvocationFromString("Hi\nHo\nhI\nhO\n")
-	invocationChan, count := pipeline.Invoke(invocation)
-
-	//err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	/*
-		if err != nil {
-			fmt.Printf("error piping to pipeline: %v", err)
-		}
-	*/
-	//err, code, index := pipeline.execandwait()
-	errinvocation := someutils.WaitFor(invocationChan, count, 1*time.Second)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.WaitUpTo(1 * time.Second)
 	outstring := out.String()
 	if errinvocation == nil {
 		t.Errorf("WaitFor returned nil")
@@ -32,7 +24,8 @@ func TestExecPipeline(t *testing.T) {
 			fmt.Printf("error: %+v\n", errinvocation.Err)
 		}
 	}
-	fmt.Println(outstring)
-	//println(out.String())
 	// TODO: 'Output' string for testing?
+	fmt.Println(outstring[0:10])
+	// Output:
+	// Go is a to
 }

@@ -23,8 +23,8 @@ func handleSignals(i *Invocation) {
 	}
 }
 
-func handleSignal(i *Invocation, signal int) bool {
-	switch signal {
+func handleSignal(i *Invocation, signal Signal) bool {
+	switch signal.Status() {
 	case 9:
 		i.Close()
 		return true
@@ -38,13 +38,13 @@ func handleSignal(i *Invocation, signal int) bool {
 }
 
 func invoke(ps PipableSimple, i *Invocation) (error, int) {
-	// automatically handle the errInPipe
-	i.AutoPipeErrInOut()
+	// automatically handle the errMainPipe.In
+	i.ErrPipe.Drain()
 	i.AutoHandleSignals()
-	//go autoPipe(i.ErrOutPipe, i.ErrInPipe)
+	//go autoPipe(i.ErrPipe.Out, i.ErrPipe.In)
 	// automatically handle signals
-	//go autoHandleSignals(i.signalChan, i.InPipe, i.OutPipe, i.ErrInPipe, i.ErrOutPipe)
-	err, exitCode := ps.Exec(i.InPipe, i.OutPipe, i.ErrOutPipe)
+	//go autoHandleSignals(i.signalChan, i.MainPipe.In, i.MainPipe.Out, i.ErrPipe.In, i.ErrPipe.Out)
+	err, exitCode := ps.Exec(i.MainPipe.In, i.MainPipe.Out, i.ErrPipe.Out)
 	//go i.Close()
 	return err, exitCode
 }
@@ -73,10 +73,10 @@ func autoPipe(out io.Writer, in io.Reader) {
 		//ok
 		//fmt.Fprintln(os.Stderr, "expected error copying invocation", err)
 	} else if err != nil {
-		fmt.Fprintln(os.Stderr, "Unexpected error while copying errInPipe to errOutPipe", err)
+		fmt.Fprintln(os.Stderr, "Unexpected error while copying errMainPipe.In to errMainPipe.Out", err)
 	} else {
 		if j > 0 {
-			//fmt.Fprintln(os.Stderr, "Finished copying errInPipe to errOutPipe", j)
+			//fmt.Fprintln(os.Stderr, "Finished copying errMainPipe.In to errMainPipe.Out", j)
 		}
 		//TODO close ErrInOutinvocation here?
 	}

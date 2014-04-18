@@ -51,7 +51,7 @@ func (mv *SomeMv) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the mv
 func (mv *SomeMv) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	for _, srcGlob := range mv.srcGlobs {
 		srces, err := filepath.Glob(srcGlob)
@@ -65,7 +65,7 @@ func (mv *SomeMv) Invoke(invocation *someutils.Invocation) (error, int) {
 		for _, src := range srces {
 			err = moveFile(src, mv.dest)
 			if err != nil {
-				fmt.Fprintf(invocation.ErrOutPipe, "Error %v\n", err)
+				fmt.Fprintf(invocation.ErrPipe.Out, "Error %v\n", err)
 				return err, 1
 			}
 		}

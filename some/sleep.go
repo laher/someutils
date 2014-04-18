@@ -50,7 +50,7 @@ func (sleep *SomeSleep) ParseFlags(call []string, errPipe io.Writer) (error, int
 
 // Exec actually performs the sleep
 func (sleep *SomeSleep) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	var unitDur time.Duration
 	switch sleep.unit {

@@ -37,11 +37,11 @@ func (dirname *SomeDirname) ParseFlags(call []string, errPipe io.Writer) (error,
 
 // Exec actually performs the dirname
 func (dirname *SomeDirname) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	for _, f := range dirname.Filenames {
 		dir := path.Dir(f)
-		fmt.Fprintln(invocation.OutPipe, dir)
+		fmt.Fprintln(invocation.MainPipe.Out, dir)
 	}
 	return nil, 0
 }

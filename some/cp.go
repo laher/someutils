@@ -51,7 +51,7 @@ func (cp *SomeCp) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the cp
 func (cp *SomeCp) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	for _, srcGlob := range cp.SrcGlobs {
 		srces, err := filepath.Glob(srcGlob)

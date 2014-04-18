@@ -114,7 +114,7 @@ func convertSet1(set1 string) ([]*regexp.Regexp, error) {
 }
 
 func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	/*
 		inputs, err := convertSet1(tr.Set1)
@@ -147,7 +147,7 @@ func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
 	//fmt.Printf("from %v\n", tr.inputs)
 	//fmt.Printf("to %v\n", tr.outputs)
 
-	err := someutils.LineProcessor(invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe, fu)
+	err := someutils.LineProcessor(invocation.MainPipe.In, invocation.MainPipe.Out, invocation.ErrPipe.Out, fu)
 	if err != nil {
 		return err, 1
 	}

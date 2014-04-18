@@ -2,21 +2,18 @@ package some
 
 import (
 	"github.com/laher/someutils"
+	"strings"
 	"testing"
 )
 
 func TestXargsPipeline(t *testing.T) {
 	pipeline := someutils.NewPipeline(Xargs(LsFact, "-l"))
-	invocation, out, errout := someutils.InvocationFromString(".\n..\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := someutils.Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader(".\n..\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation == nil {
 
-		t.Errorf("Wait returned nil. Expecting %d invocations", count)
+		t.Errorf("Wait returned nil")
 	}
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())

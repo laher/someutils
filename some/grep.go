@@ -75,7 +75,7 @@ func (grep *SomeGrep) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 
 // Exec actually performs the grep
 func (grep *SomeGrep) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	reg, err := compile(grep.pattern, grep)
 	if err != nil {
@@ -93,14 +93,14 @@ func (grep *SomeGrep) Invoke(invocation *someutils.Invocation) (error, int) {
 			}
 			files = append(files, results...)
 		}
-		err = grepAll(reg, files, grep, invocation.OutPipe)
+		err = grepAll(reg, files, grep, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}
 	} else {
 		if uggo.IsPipingStdin() {
 			//check STDIN
-			err = grepReader(invocation.InPipe, "", reg, grep, invocation.OutPipe)
+			err = grepReader(invocation.MainPipe.In, "", reg, grep, invocation.MainPipe.Out)
 			if err != nil {
 				return err, 1
 			}

@@ -38,9 +38,9 @@ func (redirector *PipeRedirector) Invoke(invocation *Invocation) (error, int) {
 		defer fo.Close()
 		var rdr io.Reader
 		if redirector.isRedirectFromErrPipe {
-			rdr = invocation.ErrInPipe
+			rdr = invocation.ErrPipe.In
 		} else {
-			rdr = invocation.InPipe
+			rdr = invocation.MainPipe.In
 		}
 		_, err = io.Copy(fo, rdr)
 		if err == io.EOF || err == io.ErrClosedPipe {
@@ -56,20 +56,20 @@ func (redirector *PipeRedirector) Invoke(invocation *Invocation) (error, int) {
 		var rdr io.Reader
 		var writer io.Writer
 		if redirector.isRedirectFromErrPipe {
-			rdr = invocation.ErrInPipe
+			rdr = invocation.ErrPipe.In
 		} else {
-			rdr = invocation.InPipe
+			rdr = invocation.MainPipe.In
 		}
 
 		if redirector.isRedirectToErrPipe {
-			writer = invocation.ErrOutPipe
+			writer = invocation.ErrPipe.Out
 		} else if redirector.isRedirectToNull {
 			//wrap Discard into an io.Pipe to ensure it is Closable
 			r, w := io.Pipe()
 			go io.Copy(ioutil.Discard, r)
 			writer = w
 		} else {
-			writer = invocation.OutPipe
+			writer = invocation.MainPipe.Out
 		}
 
 		closer, isCloser := writer.(io.Closer)

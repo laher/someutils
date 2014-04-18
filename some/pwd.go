@@ -38,13 +38,13 @@ func (pwd *SomePwd) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the pwd
 func (pwd *SomePwd) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	wd, err := os.Getwd()
 	if err != nil {
 		return err, 1
 	}
-	fmt.Fprintln(invocation.OutPipe, wd)
+	fmt.Fprintln(invocation.MainPipe.Out, wd)
 	return nil, 0
 }
 

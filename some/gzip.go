@@ -1,13 +1,16 @@
 package some
 
 import (
+	"bytes"
 	"compress/gzip"
 	"errors"
+	"fmt"
 	"github.com/laher/someutils"
 	"github.com/laher/uggo"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func init() {
@@ -51,12 +54,14 @@ func (gz *SomeGzip) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the gzip
 func (gz *SomeGzip) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	//fmt.Printf("invocation: %+v\n", invocation)
+	//fmt.Printf("gz: %+v\n", gz)
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
-	if len(gz.Filenames) == 0 {
+	if len(gz.Filenames) < 1 {
 		//pipe in?
 		var writer io.Writer
-		outputFilename := ""
+		var outputFilename string
 		if gz.outFile != "" {
 			outputFilename = gz.outFile
 			var err error
@@ -65,10 +70,11 @@ func (gz *SomeGzip) Invoke(invocation *someutils.Invocation) (error, int) {
 				return err, 1
 			}
 		} else {
-			outputFilename = ""
-			writer = invocation.OutPipe
+		//	fmt.Printf("stdin to stdout: %+v\n", gz)
+			outputFilename = "S" //seems to be the default used by gzip
+			writer = invocation.MainPipe.Out
 		}
-		err := gz.doGzip(invocation.InPipe, writer, filepath.Base(outputFilename))
+		err := gz.doGzip(invocation.MainPipe.In, writer, filepath.Base(outputFilename))
 		if err != nil {
 			return err, 1
 		}
@@ -91,7 +97,7 @@ func (gz *SomeGzip) Invoke(invocation *someutils.Invocation) (error, int) {
 				defer gzf.Close()
 				writer = gzf
 			} else {
-				writer = invocation.OutPipe
+				writer = invocation.MainPipe.Out
 			}
 			err = gz.doGzip(inputFile, writer, filepath.Base(inputFilename))
 			if err != nil {
@@ -116,28 +122,54 @@ func (gz *SomeGzip) Invoke(invocation *someutils.Invocation) (error, int) {
 }
 
 func (gz *SomeGzip) doGzip(reader io.Reader, writer io.Writer, filename string) error {
-	gzw := gzip.NewWriter(writer)
+
+	inw := new (bytes.Buffer)
+	_, err := io.Copy(inw, reader)
+	if err != nil {
+		return err
+	}
+//	fmt.Println("input: ", inw.String())
+	rdr := strings.NewReader(inw.String())
+
+	outw := new (bytes.Buffer)
+	
+
+
+	gzw := gzip.NewWriter(outw)
 	defer gzw.Close()
-	gzw.Header.Comment = "file compressed by someutils-gzip"
+	gzw.Header.Comment = "Gzipped by someutils."
 	gzw.Header.Name = filename
 
-	_, err := io.Copy(gzw, reader)
+//	fmt.Println("Copying ")
+	_, err = io.Copy(gzw, rdr)
+//	fmt.Println("Copied ", i)
 	if err != nil {
+		fmt.Println("Copied err", err)
 		return err
 	}
 	//get error where possible
 	err = gzw.Close()
+	//fmt.Println("Closed ")
 	if err != nil {
+		fmt.Println("Closed err", err)
 		return err
 	}
-
-	return nil
+//	fmt.Println("Wrote OK ", i)
+	
+//	fmt.Println("Wrote: ", outw.String())
+	_, err = io.Copy(writer, outw)
+//	fmt.Printf("Copied to eventual writer %T. length: %d\n", outw, i)
+	
+	return err
 }
 
 // Factory for *SomeGzip
 func Gzip(args ...string) someutils.CliPipable {
 	gz := new(SomeGzip)
 	gz.Filenames = args
+	if len(args) < 1 {
+		gz.IsStdout = true
+	}
 	return (gz)
 }
 

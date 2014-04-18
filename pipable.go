@@ -9,7 +9,7 @@ type Pipable interface {
 
 //a PipableSimple can be executed on a pipeline when wrapped inside a PipableSimpleWrapper
 type PipableSimple interface {
-	Exec(inPipe io.Reader, outPipe io.Writer, errOutPipe io.Writer) (error, int)
+	Exec(inPipe io.Reader, outPipe io.Writer, errPipe io.Writer) (error, int)
 }
 
 // a Named Pipable can be registered for use by e.g. xargs
@@ -32,7 +32,7 @@ type Named interface {
 	Name() string
 }
 type Cliable interface {
-	ParseFlags(call []string, errOutPipe io.Writer) (error, int)
+	ParseFlags(call []string, errPipe io.Writer) (error, int)
 }
 
 type NamedPipableSimple interface {
@@ -67,10 +67,12 @@ func WrapCliPipable(ps CliPipableSimple) CliPipable {
 	return &CliPipableSimpleWrapper{ps}
 }
 
+/*
 func (w PipableWrapper) ExecFull(inPipe io.Reader, outPipe io.Writer, errInPipe io.Reader, errOutPipe io.Writer, signalChan chan int) (error, int) {
-	go autoPipe(errOutPipe, errInPipe)
-	return w.PipableSimple.Exec(inPipe, outPipe, errOutPipe)
+	go autoPipe(errMainPipe.Out, errMainPipe.In)
+	return w.PipableSimple.Exec(inPipe, outPipe, errMainPipe.Out)
 }
+*/
 
 func (npsw *NamedPipableSimpleWrapper) Invoke(i *Invocation) (error, int) {
 	return invoke(npsw.NamedPipableSimple, i)

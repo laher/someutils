@@ -49,7 +49,7 @@ func (tail *SomeTail) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 
 // Exec actually performs the tail
 func (tail *SomeTail) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	if len(tail.Filenames) > 0 {
 		for _, fileName := range tail.Filenames {
@@ -70,7 +70,7 @@ func (tail *SomeTail) Invoke(invocation *someutils.Invocation) (error, int) {
 					return err, 1
 				}
 			}
-			end, err := tailReader(file, seek, tail, invocation.OutPipe)
+			end, err := tailReader(file, seek, tail, invocation.MainPipe.Out)
 			if err != nil {
 				file.Close()
 				return err, 1
@@ -98,7 +98,7 @@ func (tail *SomeTail) Invoke(invocation *someutils.Invocation) (error, int) {
 						return err, 1
 					}
 					if finf.Size() > end {
-						end, err = tailReader(file, end, tail, invocation.OutPipe)
+						end, err = tailReader(file, end, tail, invocation.MainPipe.Out)
 						if err != nil {
 							file.Close()
 							return err, 1
@@ -115,7 +115,7 @@ func (tail *SomeTail) Invoke(invocation *someutils.Invocation) (error, int) {
 		}
 	} else {
 		//stdin ..
-		_, err := tailReader(invocation.InPipe, 0, tail, invocation.OutPipe)
+		_, err := tailReader(invocation.MainPipe.In, 0, tail, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}

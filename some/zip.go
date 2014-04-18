@@ -46,7 +46,7 @@ func (z *SomeZip) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 
 // Exec actually performs the zip
 func (z *SomeZip) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	err := ZipItems(z.zipFilename, z.items)
 	if err != nil {

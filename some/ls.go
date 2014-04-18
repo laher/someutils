@@ -63,10 +63,10 @@ func (ls *SomeLs) ParseFlags(call []string, errPipe io.Writer) (error, int) {
 
 // Exec actually performs the ls
 func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
-	out := tabwriter.NewWriter(invocation.OutPipe, 4, 4, 1, ' ', 0)
-	args, err := getDirList(ls.globs, ls, invocation.InPipe, invocation.OutPipe, invocation.ErrOutPipe)
+	out := tabwriter.NewWriter(invocation.MainPipe.Out, 4, 4, 1, ' ', 0)
+	args, err := getDirList(ls.globs, ls, invocation.MainPipe.In, invocation.MainPipe.Out, invocation.ErrPipe.Out)
 	if err != nil {
 		return err, 1
 	}
@@ -78,7 +78,7 @@ func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
 			strings.HasPrefix(arg, "..") || "." == arg {
 			argInfo, err := os.Stat(arg)
 			if err != nil {
-				fmt.Fprintln(invocation.ErrOutPipe, "stat failed for ", arg)
+				fmt.Fprintln(invocation.ErrPipe.Out, "stat failed for ", arg)
 				return err, 1
 			}
 			if argInfo.IsDir() {
@@ -109,7 +109,7 @@ func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
 					}
 				}
 
-				err := list(out, invocation.ErrOutPipe, dir, "", ls, &counter)
+				err := list(out, invocation.ErrPipe.Out, dir, "", ls, &counter)
 				if err != nil {
 					return err, 1
 				}
@@ -118,7 +118,7 @@ func (ls *SomeLs) Invoke(invocation *someutils.Invocation) (error, int) {
 				}
 			} else {
 
-				listItem(argInfo, out, invocation.ErrOutPipe, filepath.Dir(arg), "", ls, &counter)
+				listItem(argInfo, out, invocation.ErrPipe.Out, filepath.Dir(arg), "", ls, &counter)
 			}
 			lastWasDir = argInfo.IsDir()
 		}

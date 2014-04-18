@@ -16,6 +16,7 @@ func init() {
 // SomeHead represents and performs a `head` invocation
 type SomeHead struct {
 	lines     int
+	ch        byte
 	Filenames []string
 }
 
@@ -42,7 +43,7 @@ func (head *SomeHead) ParseFlags(call []string, errPipe io.Writer) (error, int) 
 
 // Exec actually performs the head
 func (head *SomeHead) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	//TODO do something here!
 	if len(head.Filenames) > 0 {
@@ -51,7 +52,8 @@ func (head *SomeHead) Invoke(invocation *someutils.Invocation) (error, int) {
 			if err != nil {
 				return err, 1
 			}
-			err = headFile(file, head, invocation.OutPipe)
+			//err = headFile(file, head, invocation.MainPipe.Out)
+			err = head.head(invocation.MainPipe.Out, file)
 			if err != nil {
 				file.Close()
 				return err, 1
@@ -63,7 +65,7 @@ func (head *SomeHead) Invoke(invocation *someutils.Invocation) (error, int) {
 		}
 	} else {
 		//stdin ..
-		err := headFile(invocation.InPipe, head, invocation.OutPipe)
+		err := head.head(invocation.MainPipe.Out, invocation.MainPipe.In)
 		if err != nil {
 			return err, 1
 		}
@@ -71,13 +73,35 @@ func (head *SomeHead) Invoke(invocation *someutils.Invocation) (error, int) {
 	return nil, 0
 }
 
+func (head *SomeHead) head(out io.Writer, in io.Reader) error {
+	reader := bufio.NewReader(in)
+	lineNo := 1
+	ch := '\n' //should this be an option?
+	for lineNo <= head.lines {
+		text, err := reader.ReadBytes(byte(ch))
+		if err != nil {
+			return err
+		}
+		//text := scanner.Text()
+		fmt.Fprintf(out, "%s", text) //, string(ch))
+		lineNo++
+	}
+	/*err := scanner.Err()
+	if err != nil {
+		return err
+	}
+	*/
+	return nil
+}
+
+// deprecated (use of bufio.Scanner)
 func headFile(file io.Reader, head *SomeHead, out io.Writer) error {
 	scanner := bufio.NewScanner(file)
-	line := 1
-	for scanner.Scan() && line <= head.lines {
+	lineNo := 1
+	for scanner.Scan() && lineNo <= head.lines {
 		text := scanner.Text()
 		fmt.Fprintf(out, "%s\n", text)
-		line++
+		lineNo++
 	}
 	err := scanner.Err()
 	if err != nil {

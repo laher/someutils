@@ -71,14 +71,14 @@ func countTrue(args ...bool) int {
 
 // Exec actually performs the tar
 func (t *SomeTar) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	//overrideable??
 	destDir := "."
 	if t.IsCreate {
 		//OK
 		//fmt.Printf("Create %s\n", t.ArchiveFilename)
-		err := TarItems(t.ArchiveFilename, t.args, t, invocation.OutPipe)
+		err := TarItems(t.ArchiveFilename, t.args, t, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}
@@ -89,19 +89,19 @@ func (t *SomeTar) Invoke(invocation *someutils.Invocation) (error, int) {
 		}
 		//OK
 		//fmt.Printf("Append %s\n", t.ArchiveFilename)
-		err := TarItems(t.ArchiveFilename, t.args, t, invocation.OutPipe)
+		err := TarItems(t.ArchiveFilename, t.args, t, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}
 	} else if t.IsList {
 		//fmt.Println("List", t.ArchiveFilename)
-		err := TestTarItems(t.ArchiveFilename, t.args, invocation.InPipe, invocation.OutPipe)
+		err := TestTarItems(t.ArchiveFilename, t.args, invocation.MainPipe.In, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}
 	} else if t.IsExtract {
 		//fmt.Println("Extract", t.ArchiveFilename)
-		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, invocation.InPipe, invocation.OutPipe)
+		err := UntarItems(t.ArchiveFilename, destDir, t.args, t, invocation.MainPipe.In, invocation.MainPipe.Out)
 		if err != nil {
 			return err, 1
 		}

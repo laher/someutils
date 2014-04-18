@@ -2,6 +2,7 @@ package some
 
 import (
 	"github.com/laher/someutils"
+	"strings"
 	"testing"
 )
 
@@ -25,7 +26,7 @@ func TestFluentTr(t *testing.T) {
 	var errout bytes.Buffer
 	inPipe, outPipe, errPipe := strings.NewReader("HI"), &out, &errout
 	err, code := Tr("I", "O").Invoke(invocation *someutils.Invocation) (error, int) {
-invocation.AutoPipeErrInOut()
+invocation.ErrPipe.Drain()
 invocation.AutoHandleSignals()
 	if err != nil {
 		if code != 0 {
@@ -46,10 +47,10 @@ func Test2pipes(t *testing.T) {
 	tr1 := Tr("H", "O")
 	tr2 := Tr("I", "J")
 	go tr1.Invoke(invocation *someutils.Invocation) (error, int) {
-invocation.AutoPipeErrInOut()
+invocation.ErrPipe.Drain()
 invocation.AutoHandleSignals()
 	go tr2.Invoke(invocation *someutils.Invocation) (error, int) {
-invocation.AutoPipeErrInOut()
+invocation.ErrPipe.Drain()
 invocation.AutoHandleSignals()
 	time.Sleep(1 * time.Second)
 	output := out.String()
@@ -62,12 +63,8 @@ invocation.AutoHandleSignals()
 */
 func TestTrPipeline(t *testing.T) {
 	pipeline := someutils.NewPipeline(Tr("H", "O"), Tr("I", "J"))
-	invocation, out, errout := someutils.InvocationFromString("Hi\nHo\nhI\nhO\n")
-	err, invocationchan, count := invocation.PipeToPipeline(pipeline)
-	if err != nil {
-		t.Errorf("error piping to pipeline: %v", err)
-	}
-	errinvocation := someutils.Wait(invocationchan, count)
+	invocation, out, errout := pipeline.InvokeReader(strings.NewReader("Hi\nHo\nhI\nhO\n"))
+	errinvocation := invocation.Wait()
 	outstring := out.String()
 	if errinvocation.Err != nil {
 		t.Logf("errout: %+v\n", errout.String())

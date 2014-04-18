@@ -49,11 +49,11 @@ func (xargs *SomeXargs) ParseFlags(call []string, errPipe io.Writer) (error, int
 
 // Exec actually performs the xargs
 func (xargs *SomeXargs) Invoke(invocation *someutils.Invocation) (error, int) {
-	invocation.AutoPipeErrInOut()
+	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
 	util := xargs.utilFactory()
 	args := xargs.newArgset(util.Name())
-	reader := bufio.NewReader(invocation.InPipe)
+	reader := bufio.NewReader(invocation.MainPipe.In)
 	cont := true
 	count := 0
 	maxCount := 5
@@ -61,7 +61,7 @@ func (xargs *SomeXargs) Invoke(invocation *someutils.Invocation) (error, int) {
 		if count >= maxCount {
 			count = 0
 			//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-			err, code := util.ParseFlags(args, invocation.ErrOutPipe)
+			err, code := util.ParseFlags(args, invocation.ErrPipe.Out)
 			if err != nil {
 				return err, code
 			}
@@ -86,7 +86,7 @@ func (xargs *SomeXargs) Invoke(invocation *someutils.Invocation) (error, int) {
 	//still more args to process
 	if count > 0 {
 		//fmt.Fprintf(errPipe, "args for '%s': %v\n", util.Name(), args)
-		err, code := util.ParseFlags(args, invocation.ErrOutPipe)
+		err, code := util.ParseFlags(args, invocation.ErrPipe.Out)
 		if err != nil {
 			return err, code
 		}

@@ -1,6 +1,7 @@
 package someutils
 
 import (
+	"bytes"
 	"io"
 	"time"
 )
@@ -15,7 +16,7 @@ func NewPipeline(pipables ...Pipable) *Pipeline {
 }
 
 // Run pipables in a sequence, weaving together their inputs and outputs appropriately
-func (p *Pipeline) Invoke(mainInvocation *Invocation) (chan *Invocation, int) {
+func (p *Pipeline) Invoke(mainInvocation *PipelineInvocation) (chan *Invocation, int) {
 	e := make(chan *Invocation)
 	var previousReader *io.ReadCloser
 	var previousErrReader *io.ReadCloser
@@ -28,26 +29,28 @@ func (p *Pipeline) Invoke(mainInvocation *Invocation) (chan *Invocation, int) {
 		var wErr io.WriteCloser
 		var rErr io.ReadCloser
 		locInvocation := new(Invocation)
+		locInvocation.init()
 		if pipableIndex == 0 {
 			//first iteration
 			r, w = io.Pipe()
-			locInvocation.InPipe = mainInvocation.InPipe
-			locInvocation.ErrInPipe = mainInvocation.ErrInPipe
+			locInvocation.MainPipe.In = mainInvocation.MainPipe.In
+			locInvocation.ErrPipe.In = mainInvocation.ErrPipe.In
 		} else {
-			locInvocation.InPipe = *previousReader
-			locInvocation.ErrInPipe = *previousErrReader
+			locInvocation.MainPipe.In = *previousReader
+			locInvocation.ErrPipe.In = *previousErrReader
 		}
 		if pipableIndex == len(p.pipables)-1 {
 			//last iteration
-			locInvocation.OutPipe = mainInvocation.OutPipe
-			locInvocation.ErrOutPipe = mainInvocation.ErrOutPipe
+			locInvocation.MainPipe.Out = mainInvocation.MainPipe.Out
+			locInvocation.ErrPipe.Out = mainInvocation.ErrPipe.Out
 		} else {
 			r, w = io.Pipe()
-			locInvocation.OutPipe = w
+			locInvocation.MainPipe.Out = w
 
 			rErr, wErr = io.Pipe()
-			locInvocation.ErrOutPipe = wErr
+			locInvocation.ErrPipe.Out = wErr
 		}
+		mainInvocation.Add(locInvocation)
 		execAsync(pipable, locInvocation, e)
 		previousReader = &r
 		previousErrReader = &rErr
@@ -56,20 +59,30 @@ func (p *Pipeline) Invoke(mainInvocation *Invocation) (chan *Invocation, int) {
 	return e, pipableIndex
 }
 
+func (p *Pipeline) InvokeReader(inPipe io.Reader) (*PipelineInvocation, *bytes.Buffer, *bytes.Buffer) {
+	outPipe := new(bytes.Buffer)
+	errPipe := new(bytes.Buffer)
+
+	i := NewInvocation(inPipe, outPipe, errPipe)
+	pi := NewPipelineInvocation(i)
+	p.Invoke(pi)
+	return pi, outPipe, errPipe
+}
+
 /*
 // Intended as a subtype for Pipable which can redirect the error output of the previous command. This is treated as a special case because commands do not typically have access to this.
 type WillRedirectErrIn interface {
-	SetErrIn(errInPipe io.Reader)
+	SetErrIn(errMainPipe.In io.Reader)
 }
 */
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) ExecAndWait(invocation *Invocation) *Invocation {
-	e, count := p.Invoke(invocation)
-	return Wait(e, count)
+func (p *Pipeline) ExecAndWait(invocation *PipelineInvocation) *Invocation {
+	p.Invoke(invocation)
+	return invocation.Wait()
 }
 
 // Pipe and wait for errors (up until a timeout occurs)
-func (p *Pipeline) ExecAndWaitFor(invocation *Invocation, timeout time.Duration) *Invocation {
-	e, count := p.Invoke(invocation)
-	return WaitFor(e, count, timeout)
+func (p *Pipeline) ExecAndWaitUpTo(invocation *PipelineInvocation, timeout time.Duration) *Invocation {
+	p.Invoke(invocation)
+	return invocation.WaitUpTo(timeout)
 }
