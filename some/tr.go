@@ -18,7 +18,7 @@ func init() {
 type SomeTr struct {
 	IsDelete     bool
 	IsSqueeze    bool
-	isComplement bool // currently unused as I just don't get it.
+	IsComplement bool // currently unused as I just don't get it.
 	set1         string
 	set2         string
 	translations map[*regexp.Regexp]string
@@ -27,13 +27,14 @@ type SomeTr struct {
 func (tr *SomeTr) Name() string {
 	return "tr"
 }
+
 func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("tr", "[OPTION]... SET1 [SET2]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
 	flagSet.AliasedBoolVar(&tr.IsDelete, []string{"d", "delete"}, false, "Delete characters in SET1, do not translate")
 	flagSet.AliasedBoolVar(&tr.IsSqueeze, []string{"s", "squeeze-repeats"}, false, "replace each input sequence of a repeated character that is listed in SET1 with a single occurence of that character")
 	//Don't get the Complement thing. Just don't understand it right now.
-//	flagSet.AliasedBoolVar(&tr.isComplement, []string{"c", "complement"}, false, "use the complement of SET1")
+	flagSet.AliasedBoolVar(&tr.IsComplement, []string{"c", "complement"}, false, "use the complement of SET1")
 	err, code := flagSet.ParsePlus(call[1:])
 	if err != nil {
 		return err, code
@@ -46,7 +47,7 @@ func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	}
 	if len(sets) > 1 {
 		tr.set2 = sets[1]
-	} else if !tr.IsDelete && !tr.isComplement {
+	} else if !tr.IsDelete {
 		return errors.New("Not enough args supplied"), 1
 	}
 	err = tr.Preprocess()
@@ -55,20 +56,7 @@ func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	}
 	return nil, 0
 }
-/*
-func (tr *SomeTr) SetSet1(set1 string) error {
-	tr.set1 = set1
-	//inputs, err := convertSet1(set1)
-	//tr.inputs = inputs
-	//return err
-}
-func (tr *SomeTr) SetSet2(set2 string) error {
-	tr.set2 = set2
-	//outputs, err := convertSet2(set2)
-	//tr.outputs = outputs
-	//return err
-}
-*/
+
 func (tr *SomeTr) Preprocess() error {
 	tr.translations = map[*regexp.Regexp]string{}
 	set1 := tr.set1
@@ -84,10 +72,9 @@ func (tr *SomeTr) Preprocess() error {
 			if err != nil {
 				return err
 			}
+			//replacement is empty-string
 			tr.translations[reg] = ""
 		}
-//	} else if tr.isComplement {
-		// dunno
 	} else {
 		// process both sets together
 		set2 := tr.set2
@@ -113,10 +100,14 @@ func (tr *SomeTr) Preprocess() error {
 
 func (tr *SomeTr) toRegexp(set1Part string) (*regexp.Regexp, error) {
 	maybeSqueeze := ""
+	maybeComplement := ""
 	if tr.IsSqueeze {
 		maybeSqueeze = "+"
 	}
-	regString := "^["+set1Part+"]"+maybeSqueeze
+	if tr.IsComplement {
+		maybeComplement = "^"
+	}
+	regString := "^["+maybeComplement+set1Part+"]"+maybeSqueeze
 	//fmt.Println(regString)
 	reg, err := regexp.Compile(regString)
 	return reg, err
@@ -144,50 +135,8 @@ func nextPartSet2(set2 string, set2len int) (string, string, error) {
 	}
 	return set2[:set2len], set2[set2len:], nil
 }
-/*
-//TODO fix behaviour of set1/set2 relationship
-func convertSet2(set2 string) ([]string, error) {
-	if strings.Contains(set2, "-") {
-		parts := strings.Split(set2, "-")
-		firstChar := parts[0]
-		unicodePointStart := int(firstChar[0])
-		lastChar := parts[1]
-		unicodePointEnd := int(lastChar[0])
-		outputs := []string{}
-		for i := unicodePointStart; i <= unicodePointEnd; i++ {
-			st := string([]byte{byte(i)})
-			outputs = append(outputs, st)
-		}
-		return outputs, nil
-	} else {
-		return []string{set2}, nil
-	}
-}
-func convertSet1(set1 string) ([]*regexp.Regexp, error) {
-	inputs := []*regexp.Regexp{}
-	if strings.Contains(set1, "-") {
-		parts := strings.Split(set1, "-")
-		firstChar := parts[0]
-		unicodePointStart := int(firstChar[0])
-		lastChar := parts[1]
-		unicodePointEnd := int(lastChar[0])
-		for i := unicodePointStart; i <= unicodePointEnd; i++ {
-			r, err := regexp.Compile(string([]byte{byte(i)}))
-			if err != nil {
-				return inputs, err
-			}
-			inputs = append(inputs, r)
-		}
-	} else {
-		r, err := regexp.Compile("[" + set1 + "]")
-		if err != nil {
-			return inputs, err
-		}
-		inputs = append(inputs, r)
-	}
-	return inputs, nil
-}
-*/
+
+// Invoke actually carries out the command
 func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
 	invocation.ErrPipe.Drain()
 	invocation.AutoHandleSignals()
@@ -198,26 +147,32 @@ func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
 		var buffer bytes.Buffer
 		remainder := string(line)
 		for len(remainder) > 0 {
-			nextPart := remainder[:1]
+			trimLeft := 1
+			nextPart := remainder[:trimLeft]
 			for reg, v := range tr.translations {
 				//fmt.Printf("Translation '%v'=>'%s' on '%s'\n", reg, v, remainder)
-		
-				if reg.MatchString(remainder) {
+				match := reg.MatchString(remainder)
+				if match {
 					toReplace := reg.FindString(remainder)
 					replacement := reg.ReplaceAllString(toReplace, v)
-				//	fmt.Printf("Match, %s=>%s\n", toReplace, replacement)
+					//fmt.Printf("Replace %s=>%s\n", toReplace, replacement)
 					nextPart = replacement
-					if len(toReplace) > 1 { //if squeezing has taken place, remove more leading chars accordingly
-				//		fmt.Printf("Squeezing! %d \n", len(toReplace))
-						remainder = remainder[len(toReplace)-1:]
+					//if squeezing has taken place, remove more leading chars accordingly
+					trimLeft = len(toReplace)
+					if !tr.IsComplement {
+						break
 					}
+				} else if tr.IsComplement {
+					// this is a double-negative - non-match of negative-regex.
+					// This implies that set1 matches the current input character.
+					// So, keep it as-is and break out of the loop.
+					trimLeft = 1
+					nextPart = remainder[:trimLeft]
 					break
-				} else {
-
-	//				fmt.Printf("No match\n")
 				}
 			}
-			remainder = remainder[1:]
+
+			remainder = remainder[trimLeft:]
 			buffer.WriteString(nextPart)
 		}
 		out := buffer.String()
@@ -234,25 +189,33 @@ func (tr *SomeTr) Invoke(invocation *someutils.Invocation) (error, int) {
 func NewTr() *SomeTr {
 	return new(SomeTr)
 }
+
+// Factory for normal `tr`
 func Tr(set1, set2 string) someutils.CliPipable {
 	tr := NewTr()
 	tr.set1 = set1
 	tr.set2 = set2
 	return (tr)
 }
+
+// Factory for `tr -d` (delete set1)
 func TrD(set1 string) someutils.CliPipable {
 	tr := NewTr()
 	tr.IsDelete = true
 	tr.set1 = set1
 	return (tr)
 }
-func TrC(set1 string) someutils.CliPipable {
+
+// Factory for `tr -c` (complement)
+func TrC(set1 string, set2 string) someutils.CliPipable {
 	tr := NewTr()
-	tr.isComplement = true
+	tr.IsComplement = true
 	tr.set1 = set1
+	tr.set2 = set2
 	return (tr)
 }
 
+//Cli helper for tr
 func TrCli(call []string) (error, int) {
 
 	util := new(SomeTr)
