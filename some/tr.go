@@ -15,6 +15,7 @@ func init() {
 	someutils.RegisterPipable(func() someutils.CliPipable { return new(SomeTr) })
 }
 
+// SomeTr mimics the functionality of the `tr` function from coreutils.
 type SomeTr struct {
 	IsDelete     bool
 	IsSqueeze    bool
@@ -24,10 +25,12 @@ type SomeTr struct {
 	translations map[*regexp.Regexp]string
 }
 
+// returns the name of the command
 func (tr *SomeTr) Name() string {
 	return "tr"
 }
 
+// ParseFlags parses commandline options.
 func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	flagSet := uggo.NewFlagSetDefault("tr", "[OPTION]... SET1 [SET2]", someutils.VERSION)
 	flagSet.SetOutput(errWriter)
@@ -57,6 +60,7 @@ func (tr *SomeTr) ParseFlags(call []string, errWriter io.Writer) (error, int) {
 	return nil, 0
 }
 
+// Parses SET1 and SET2 into a map of translations
 func (tr *SomeTr) Preprocess() error {
 	tr.translations = map[*regexp.Regexp]string{}
 	set1 := tr.set1
@@ -113,6 +117,7 @@ func (tr *SomeTr) toRegexp(set1Part string) (*regexp.Regexp, error) {
 	return reg, err
 }
 
+// Parser for SET1. Supports single-chars, ranges, and regex-like character groups
 func nextPartSet1(set1 string) (string, string, int) {
 	if strings.HasPrefix(set1, "[") {
 		//find matching
@@ -129,6 +134,7 @@ func nextPartSet1(set1 string) (string, string, int) {
 	}
 }
 
+// Parser for SET2. Supports single and multiple chars
 func nextPartSet2(set2 string, set2len int) (string, string, error) {
 	if len(set2) < set2len {
 		return "", "", errors.New(fmt.Sprintf("Error out of range (%d - %s)", set2len, set2))
